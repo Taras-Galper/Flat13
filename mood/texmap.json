@@ -1,0 +1,190 @@
+{
+"Acacia light brown stain": {
+"mode": "box",
+"k": 1.66667,
+"value": 0.78,
+"sat": 1.2,
+"tint": [
+0.95,
+0.78,
+0.58
+]
+},
+"Boucle oatmeal": {
+"mode": "box",
+"k": 2.94118,
+"value": 1.08,
+"sat": 0.75
+},
+"Ceiling": {
+"mode": "box",
+"k": 1.0
+},
+"Charcoal wool": {
+"mode": "box",
+"k": 3.7037,
+"value": 0.62,
+"sat": 0.35,
+"tint": [
+1.0,
+0.96,
+0.9
+]
+},
+"Clay plaster": {
+"mode": "box",
+"k": 1.0
+},
+"Coir mat": {
+"mode": "box",
+"k": 8.33333,
+"value": 0.9,
+"sat": 1.1,
+"tint": [
+0.85,
+0.68,
+0.45
+]
+},
+"Cotton sheet": {
+"mode": "box",
+"k": 2.85714
+},
+"Djurmo boucle": {
+"mode": "box",
+"k": 3.33333,
+"value": 1.12,
+"sat": 0.45
+},
+"Frosön Duvholmen beige": {
+"mode": "box",
+"k": 4.0
+},
+"Limestone": {
+"mode": "box",
+"k": 1.0
+},
+"Limewash": {
+"mode": "box",
+"k": 1.0
+},
+"Linen dusty rose": {
+"mode": "box",
+"k": 3.7037
+},
+"Linen oat": {
+"mode": "box",
+"k": 3.7037
+},
+"Linen ochre": {
+"mode": "box",
+"k": 3.7037
+},
+"Linen sage": {
+"mode": "box",
+"k": 3.7037
+},
+"Linen sheer": {
+"mode": "box",
+"k": 3.7037
+},
+"LOHALS jute": {
+"mode": "box",
+"k": 5.55556,
+"sat": 1.25,
+"tint": [
+0.95,
+0.8,
+0.52
+]
+},
+"LOHALS jute natural": {
+"mode": "box",
+"k": 5.55556
+},
+"Oak dark brown stain": {
+"mode": "box",
+"k": 1.66667,
+"value": 0.42,
+"sat": 0.95
+},
+"Oak light": {
+"mode": "box",
+"k": 1.66667,
+"value": 1.15,
+"sat": 0.7
+},
+"Oak veneer": {
+"mode": "box",
+"k": 1.66667,
+"value": 1.1,
+"sat": 0.8
+},
+"Outdoor fabric": {
+"mode": "box",
+"k": 3.7037
+},
+"Rice paper": {
+"mode": "box",
+"k": 2.85714
+},
+"Rift oak": {
+"mode": "box",
+"k": 1.66667,
+"value": 1.05,
+"sat": 0.85
+},
+"Samsala grey-beige": {
+"mode": "box",
+"k": 4.54545
+},
+"Smoked oak": {
+"mode": "box",
+"k": 1.66667,
+"value": 0.38,
+"sat": 0.9
+},
+"Teak": {
+"mode": "box",
+"k": 1.66667,
+"value": 0.8,
+"sat": 1.15,
+"tint": [
+0.95,
+0.82,
+0.68
+]
+},
+"Tile ivory 60x60": {
+"mode": "flat",
+"k": 0.83333,
+"off": [
+-3.675,
+-7.7083
+]
+},
+"Tile wood 50x15 E-W": {
+"mode": "flat",
+"k": 0.66667
+},
+"Tile wood 50x15 N-S": {
+"mode": "flat",
+"k": 0.66667,
+"rot": 1.5708
+},
+"Travertine": {
+"mode": "box",
+"k": 1.0,
+"tint": [
+0.75,
+0.7,
+0.62
+]
+},
+"Wool jute rug": {
+"mode": "box",
+"k": 4.0,
+"value": 1.35,
+"sat": 0.55
+}
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Make it yours · דירה בקומה 13</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/mood.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body class="mood-page">
+  <canvas id="mood" aria-label="The flat in 3D. Drag to look around, click the floor to walk there."></canvas>
+
+  <header class="mast" dir="ltr">
+    <div class="mast__he" dir="rtl">תעשו את זה שלכם · כל הדירה</div>
+    <div class="mast__en">Make it yours · the whole flat</div>
+    <div class="mast__row">
+      <button class="mast__btn" id="boardBtn" type="button"><span dir="rtl">לוח השראה</span> Moodboard</button>
+    </div>
+  </header>
+
+  <aside class="panel panel--samples" dir="ltr" aria-label="Samples">
+    <label class="area"><span class="panel__title"><span dir="rtl">מעצבים את</span> Styling</span>
+      <select id="area" aria-label="Room you are styling"></select></label>
+    <div class="panel__title"><span dir="rtl">אווירה</span> Moods</div>
+    <div class="moods" id="moods"></div>
+    <label class="check"><input type="checkbox" id="everywhere"> <span>Apply a mood to every room</span></label>
+    <div class="panel__title"><span dir="rtl">דוגמאות</span> Samples</div>
+    <div class="tabs" id="sampleTabs"></div>
+    <div class="tray" id="tray"></div>
+    <p class="panel__note">Drag a sample onto a wall, floor or piece of furniture in any room, or click it to style the room you are in.</p>
+  </aside>
+
+  <aside class="panel panel--light" dir="ltr" aria-label="Light">
+    <div class="panel__title"><span dir="rtl">שעה</span> Time of day</div>
+    <div class="stops" id="times"></div>
+    <input class="slider" id="time" type="range" min="0" max="3" step="0.01" value="2" aria-label="Time of day">
+    <div class="panel__title"><span dir="rtl">תאורה</span> Lighting scene</div>
+    <div class="stops stops--grid" id="scenes"></div>
+  </aside>
+
+  <aside class="panel panel--plan" dir="ltr" aria-label="Floor plan">
+    <div class="panel__title"><span dir="rtl">תוכנית</span> Go to a room</div>
+    <div class="plan" id="plan"></div>
+    <div class="busy" id="busy"><i></i><span>Bedrooms loading…</span></div>
+    <div class="planbtns planbtns--one">
+      <button class="cmpbtn" id="overviewBtn" type="button"><b dir="rtl">מבט על</b><span>Overview</span></button>
+    </div>
+    <p class="panel__note">Drag to look · click the floor to walk · arrows / WASD · [ ] time · O overview · M moodboard</p>
+  </aside>
+
+  <section class="board" id="board" dir="ltr" aria-label="Moodboard">
+    <header class="board__head">
+      <div><div class="board__he" dir="rtl">לוח ההשראה שלכם</div><div class="board__en">Your moodboard · every room</div></div>
+      <button class="board__x" id="boardClose" type="button" aria-label="Close">×</button>
+    </header>
+    <div class="board__body" id="boardBody"></div>
+    <footer class="board__foot">
+      <button class="cmpbtn" id="copyLink" type="button"><b dir="rtl">העתקת קישור</b><span>Copy link to this room</span></button>
+      <button class="cmpbtn" id="boardAll" type="button"><b dir="rtl">לכל החדרים</b><span>Use this room's picks everywhere</span></button>
+      <button class="cmpbtn" id="boardReset" type="button"><b dir="rtl">איפוס</b><span>Back to the design</span></button>
+    </footer>
+  </section>
+
+  <nav class="mbar" id="mbar" dir="ltr" aria-label="Panels">
+    <button data-sheet="samples"><b dir="rtl">עיצוב</b><span>Style</span></button>
+    <button data-sheet="light"><b dir="rtl">אור</b><span>Light</span></button>
+    <button data-sheet="plan"><b dir="rtl">תוכנית</b><span>Plan</span></button>
+  </nav>
+
+  <div class="veil" id="veil" dir="ltr"><div>
+    <div class="veil__he" dir="rtl">טוען את הדירה…</div><div class="veil__en">Loading the flat…</div>
+    <div class="veil__p"><i></i></div>
+  </div></div>
+
+  <script type="module" src="js/mood.js"></script>
+</body>
+</html>

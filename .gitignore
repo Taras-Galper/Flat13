@@ -1,0 +1,17 @@
+# heavy or generated: kept out of the repository
+*.blend
+*.blend1
+blender/models/
+blender/tex/
+blender/renders/
+mood/lm2/
+mood/v2/
+mood/*_raw.glb
+walk/
+renders/
+recordings/
+_out/
+_thumbs/
+*.dxf
+__pycache__/
+node_modules/

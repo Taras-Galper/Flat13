@@ -1,0 +1,1754 @@
+{
+ "types": {
+  "L1": {
+   "layer": "wall",
+   "name": "Wall grazer in ceiling slot",
+   "spec": "Dot-free COB line, 2700 K, CRI 95 (R9 > 50), 10 W/m ≈ 900 lm/m, 10×60° asymmetric lens, 60 mm from the wall, DALI-2 dim to 0.1%",
+   "why": "Draws light down the wall so limewash, clay and fluted oak show their texture"
+  },
+  "L2": {
+   "layer": "wall",
+   "name": "Curtain-pocket wash",
+   "spec": "COB line in the curtain recess, 2700 K, 6 W/m, 40° lens, dim to 0.1%",
+   "why": "Turns closed linen sheers into a soft luminous wall"
+  },
+  "L3": {
+   "layer": "night",
+   "name": "Plinth glow",
+   "spec": "Opal COB line under floating joinery, 2200 K, 4 W/m, dim to 1%",
+   "why": "Makes joinery float, and doubles as the night path at 5%"
+  },
+  "L4": {
+   "layer": "task",
+   "name": "Task line",
+   "spec": "Deep aluminium profile with opal cover, 2700 K, CRI 95, 12 W/m",
+   "why": "Shadow-free light on worktops, niches and book ledges"
+  },
+  "L5": {
+   "layer": "task",
+   "name": "Mirror face light",
+   "spec": "Vertical or halo lines either side of the mirror, 2700 K, CRI 95, about 300 lx on the face, IP44",
+   "why": "Light from the front, so there are no shadows under the eyes"
+  },
+  "D1": {
+   "layer": "task",
+   "name": "Recessed downlight",
+   "spec": "Trimless Ø55 mm, source set back ≥ 35 mm (40° cut-off), 7 W ≈ 500 lm, 2700 K, CRI 95, 36° beam; IP65 version in wet zones",
+   "why": "Only where hands work or faces meet; never over a sofa or a bed"
+  },
+  "D2": {
+   "layer": "accent",
+   "name": "Pinhole accent",
+   "spec": "Trimless Ø30 mm, adjustable ±35°, 4 W, 12° beam, 2700 K, CRI 97, honeycomb louvre",
+   "why": "A tight pool on art and stone; the fitting itself is nearly invisible"
+  },
+  "P1": {
+   "layer": "decor",
+   "name": "Washi pendant Ø80",
+   "spec": "Existing paper pendant over the coffee table, dim-to-warm lamp 2700 → 1800 K, hung 1.75 m above the floor",
+   "why": "The one visible lamp in the room: the lantern you sit under"
+  },
+  "P2": {
+   "layer": "decor",
+   "name": "Small washi pendants Ø44",
+   "spec": "Pair over the peninsula, 0.75 m above the top, opal inner diffuser, dim-to-warm",
+   "why": "Light on the faces at the bar without glare in the eyes"
+  },
+  "P3": {
+   "layer": "decor",
+   "name": "Paper column floor lamp",
+   "spec": "NEW. Ø45 × h 1.60, handmade washi on bamboo ribs, dim-to-warm 2700 → 1800 K. Replaces the olive tree",
+   "why": "A tall glow in the corner by the glass that balances the view at dusk"
+  },
+  "P4": {
+   "layer": "decor",
+   "name": "Washi floor lantern",
+   "spec": "Existing, h 1.40, beside the sofa behind the slatted screen",
+   "why": "Glows through the slats when you open the front door"
+  },
+  "P5": {
+   "layer": "decor",
+   "name": "Paper bedside lamp",
+   "spec": "Small paper table lamp, 1800–2700 K dim-to-warm, touch dimmer",
+   "why": "The warm low glow you fall asleep by"
+  },
+  "R1": {
+   "layer": "task",
+   "name": "Wall reading light",
+   "spec": "Articulated arm, 3 W, 2700 K, 20° beam with louvre, touch dimmer at the head",
+   "why": "Reads a book without waking the person next to you"
+  },
+  "O1": {
+   "layer": "task",
+   "name": "Desk pendant, direct / indirect",
+   "spec": "Linear 1.20 m, 30% down / 70% up, tunable 2700–4000 K, UGR < 16",
+   "why": "Bright, even desk light with no glare on the screen; the ceiling glows"
+  },
+  "B1": {
+   "layer": "accent",
+   "name": "Screen bias light",
+   "spec": "Line behind the screen, 2700 K, 3 W/m; RGBW option in the game room",
+   "why": "Rests the eyes in a dark room and makes the screen look deeper"
+  },
+  "K1": {
+   "layer": "decor",
+   "name": "Flush opal disc Ø60",
+   "spec": "Fully diffuse, no visible LED, dim-to-warm 2700 → 1800 K, dims to 0.1%",
+   "why": "Soft play light with nothing for a small child to look into"
+  },
+  "T1": {
+   "layer": "task",
+   "name": "Surface track, three mini spots",
+   "spec": "Surface-mounted, no cutting into the ceiling, 3 × 5 W, 2700 K, 30° beams",
+   "why": "Safe-room rules allow no recessed fittings, so the track does the work"
+  },
+  "W1": {
+   "layer": "task",
+   "name": "Wardrobe interior light",
+   "spec": "Line inside each door bay, 2700 K, CRI 95, door-contact switch",
+   "why": "See true colours when you choose clothes"
+  },
+  "N1": {
+   "layer": "night",
+   "name": "Step light",
+   "spec": "Recessed in the wall 0.30 m above the floor, 1.5 W, 2200 K, louvred so only the floor lights, presence sensor 23:00–06:00",
+   "why": "Find the way at night without waking up"
+  },
+  "E1": {
+   "layer": "outdoor",
+   "name": "Soffit grazer",
+   "spec": "IP65 line under the balcony soffit, 2700 K, 6 W/m, washes the façade down",
+   "why": "Gives the balcony back wall a soft glow, so the glass shows the outside and not a mirror"
+  },
+  "E2": {
+   "layer": "outdoor",
+   "name": "Spike uplight",
+   "spec": "IP67, 5 W, 2200 K, 15° beam, glare shield, in the planters",
+   "why": "Lights the olive and the grasses from below: the silhouette against the bay"
+  },
+  "E3": {
+   "layer": "outdoor",
+   "name": "Outdoor plinth glow",
+   "spec": "IP67 opal line under the sofa base and the planter lip, 2200 K, 4 W/m",
+   "why": "Low light on the plank floor that keeps the eye level clear for the view"
+  },
+  "E4": {
+   "layer": "outdoor",
+   "name": "Rechargeable table lamp",
+   "spec": "Portable, 2200 K, 150 lm, dims by touch",
+   "why": "Candle-level light at the table; nothing overhead between you and the stars"
+  }
+ },
+ "layers": {
+  "wall": {
+   "name": "Wall light",
+   "color": "#F2B872"
+  },
+  "task": {
+   "name": "Task",
+   "color": "#F4EEE2"
+  },
+  "accent": {
+   "name": "Accent",
+   "color": "#FF8C66"
+  },
+  "decor": {
+   "name": "Paper lamps",
+   "color": "#F7D59B"
+  },
+  "night": {
+   "name": "Night path",
+   "color": "#C9965A"
+  },
+  "outdoor": {
+   "name": "Balcony",
+   "color": "#9CC4A2"
+  }
+ },
+ "circuits": {
+  "ENT_D": {
+   "room": "entry",
+   "name": "Door downlight",
+   "cct": 2700
+  },
+  "ENT_NICHE": {
+   "room": "entry",
+   "name": "Bench niche + cabinet plinth",
+   "cct": 2700
+  },
+  "ENT_SCREEN": {
+   "room": "entry",
+   "name": "Slatted screen graze",
+   "cct": 2700
+  },
+  "WALL_E": {
+   "room": "living",
+   "name": "Guiding wall: east wall from door to glass",
+   "cct": 2700
+  },
+  "WALL_MEDIA": {
+   "room": "living",
+   "name": "Clay media wall graze",
+   "cct": 2700
+  },
+  "LIV_CURT": {
+   "room": "living",
+   "name": "Curtain pocket",
+   "cct": 2700
+  },
+  "LIV_PEND": {
+   "room": "living",
+   "name": "Washi pendant",
+   "cct": 2200
+  },
+  "LIV_COL": {
+   "room": "living",
+   "name": "Paper column floor lamp",
+   "cct": 2200
+  },
+  "LIV_LANT": {
+   "room": "living",
+   "name": "Floor lantern",
+   "cct": 2200
+  },
+  "LIV_ART": {
+   "room": "living",
+   "name": "Art pinspots",
+   "cct": 2700
+  },
+  "LIV_TV": {
+   "room": "living",
+   "name": "Screen bias light",
+   "cct": 2700
+  },
+  "LIV_CONSOLE": {
+   "room": "living",
+   "name": "Console plinth",
+   "cct": 2200
+  },
+  "KIT_D": {
+   "room": "kitchen",
+   "name": "Work downlights",
+   "cct": 2700
+  },
+  "KIT_SHELF": {
+   "room": "kitchen",
+   "name": "Under-shelf line",
+   "cct": 2700
+  },
+  "KIT_PEND": {
+   "room": "kitchen",
+   "name": "Peninsula pendants",
+   "cct": 2200
+  },
+  "KIT_PLINTH": {
+   "room": "kitchen",
+   "name": "Toe-kick + peninsula overhang",
+   "cct": 2200
+  },
+  "COR_D": {
+   "room": "corridor",
+   "name": "Corridor downlights",
+   "cct": 2700
+  },
+  "NIGHT": {
+   "room": "corridor",
+   "name": "Night path: step lights + wardrobe-walk plinth",
+   "cct": 2200
+  },
+  "WC_MIRROR": {
+   "room": "wc",
+   "name": "Mirror halo",
+   "cct": 2700
+  },
+  "WC_PIN": {
+   "room": "wc",
+   "name": "Basin pinspot",
+   "cct": 2700
+  },
+  "BATH_D": {
+   "room": "bath",
+   "name": "Downlights (IP65 over the tub)",
+   "cct": 2700
+  },
+  "BATH_MIRROR": {
+   "room": "bath",
+   "name": "Mirror face lights",
+   "cct": 2700
+  },
+  "BATH_NICHE": {
+   "room": "bath",
+   "name": "Tub niche line",
+   "cct": 2200
+  },
+  "LAUN_D": {
+   "room": "laundry",
+   "name": "Downlight",
+   "cct": 2700
+  },
+  "PASS_GRAZE": {
+   "room": "passage",
+   "name": "Wardrobe face graze",
+   "cct": 2700
+  },
+  "MST_CURT": {
+   "room": "master",
+   "name": "Curtain pockets",
+   "cct": 2700
+  },
+  "MST_READ": {
+   "room": "master",
+   "name": "Reading lights",
+   "cct": 2700
+  },
+  "MST_LAMPS": {
+   "room": "master",
+   "name": "Bedside paper lamps",
+   "cct": 2200
+  },
+  "MST_ART": {
+   "room": "master",
+   "name": "Art wall",
+   "cct": 2700
+  },
+  "MST_NIGHT": {
+   "room": "master",
+   "name": "Under-bed glow",
+   "cct": 1800
+  },
+  "ENS_D": {
+   "room": "ensuite",
+   "name": "Shower downlight",
+   "cct": 2700
+  },
+  "ENS_MIRROR": {
+   "room": "ensuite",
+   "name": "Mirror face lights",
+   "cct": 2700
+  },
+  "ENS_NICHE": {
+   "room": "ensuite",
+   "name": "Shower niche",
+   "cct": 2200
+  },
+  "B3_DESK": {
+   "room": "bed3",
+   "name": "Desk pendant (tunable)",
+   "cct": 4000
+  },
+  "B3_GRAZE": {
+   "room": "bed3",
+   "name": "Wardrobe graze: the call backdrop",
+   "cct": 2700
+  },
+  "B3_TV": {
+   "room": "bed3",
+   "name": "Screen bias (RGBW)",
+   "cct": 2700
+  },
+  "B3_CURT": {
+   "room": "bed3",
+   "name": "Curtain pocket",
+   "cct": 2700
+  },
+  "MAM_TRACK": {
+   "room": "mamad",
+   "name": "Surface track",
+   "cct": 2700
+  },
+  "MAM_MIRROR": {
+   "room": "mamad",
+   "name": "Dressing mirror lights",
+   "cct": 2700
+  },
+  "MAM_LAMP": {
+   "room": "mamad",
+   "name": "Bedside lamp + reading light",
+   "cct": 2200
+  },
+  "MAM_COLOR": {
+   "room": "mamad",
+   "name": "Her colour line (RGBW)",
+   "cct": 2200
+  },
+  "B4_DISC": {
+   "room": "bed4",
+   "name": "Ceiling disc",
+   "cct": 2700
+  },
+  "B4_CURT": {
+   "room": "bed4",
+   "name": "Curtain pocket",
+   "cct": 2700
+  },
+  "B4_BOOK": {
+   "room": "bed4",
+   "name": "Story light",
+   "cct": 2200
+  },
+  "B4_NIGHT": {
+   "room": "bed4",
+   "name": "Night glow",
+   "cct": 1800
+  },
+  "BAL_TREE": {
+   "room": "terrace",
+   "name": "Planter uplights",
+   "cct": 2200
+  },
+  "BAL_GLOW": {
+   "room": "terrace",
+   "name": "Low glows",
+   "cct": 2200
+  },
+  "BAL_WALL": {
+   "room": "terrace",
+   "name": "Soffit grazers",
+   "cct": 2700
+  },
+  "BAL_TABLE": {
+   "room": "terrace",
+   "name": "Table lamps",
+   "cct": 2200
+  }
+ },
+ "fixtures": [
+  {
+   "t": "D1",
+   "c": "ENT_D",
+   "p": [
+    7.15,
+    4.85
+   ],
+   "aim": null,
+   "note": "Lights the face of whoever is at the door"
+  },
+  {
+   "t": "L4",
+   "c": "ENT_NICHE",
+   "l": [
+    5.62,
+    4.7,
+    6.18,
+    4.7
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": "Bench niche in the shoe cabinet"
+  },
+  {
+   "t": "L3",
+   "c": "ENT_NICHE",
+   "l": [
+    5.25,
+    4.78,
+    6.55,
+    4.78
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": "Under the floating shoe cabinet"
+  },
+  {
+   "t": "L1",
+   "c": "ENT_SCREEN",
+   "l": [
+    7.04,
+    6.13,
+    7.75,
+    6.13
+   ],
+   "side": [
+    0,
+    0
+   ],
+   "note": "Grazes the oak slats; their shadows stripe the floor"
+  },
+  {
+   "t": "L1",
+   "c": "WALL_E",
+   "l": [
+    7.7,
+    4.45,
+    7.7,
+    6.0
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "East wall of the entry"
+  },
+  {
+   "t": "L1",
+   "c": "WALL_E",
+   "l": [
+    7.7,
+    6.16,
+    7.7,
+    9.08
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "East wall behind the sofa, ends at the glass"
+  },
+  {
+   "t": "L1",
+   "c": "WALL_MEDIA",
+   "l": [
+    3.57,
+    6.6,
+    3.57,
+    8.8
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": "Clay plaster shows its trowel marks under raking light"
+  },
+  {
+   "t": "L2",
+   "c": "LIV_CURT",
+   "l": [
+    4.25,
+    9.1,
+    7.75,
+    9.1
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": "Sheers glow when drawn; off when open at night"
+  },
+  {
+   "t": "P1",
+   "c": "LIV_PEND",
+   "p": [
+    5.92,
+    7.55
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "P3",
+   "c": "LIV_COL",
+   "p": [
+    4.1,
+    8.85
+   ],
+   "aim": null,
+   "note": "Replaces the olive tree"
+  },
+  {
+   "t": "P4",
+   "c": "LIV_LANT",
+   "p": [
+    7.47,
+    6.3
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "D2",
+   "c": "LIV_ART",
+   "p": [
+    7.08,
+    7.25
+   ],
+   "aim": [
+    1,
+    0
+   ],
+   "note": "12° pools on the sumi canvas"
+  },
+  {
+   "t": "D2",
+   "c": "LIV_ART",
+   "p": [
+    7.08,
+    7.85
+   ],
+   "aim": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "B1",
+   "c": "LIV_TV",
+   "l": [
+    3.54,
+    7.2,
+    3.54,
+    8.2
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": "Behind the flush TV"
+  },
+  {
+   "t": "L3",
+   "c": "LIV_CONSOLE",
+   "l": [
+    3.93,
+    6.57,
+    3.93,
+    8.83
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": "Under the floating console"
+  },
+  {
+   "t": "D1",
+   "c": "KIT_D",
+   "p": [
+    2.8,
+    1.1
+   ],
+   "aim": null,
+   "note": "Over the front edge of the counter, so you never stand in your own shadow"
+  },
+  {
+   "t": "D1",
+   "c": "KIT_D",
+   "p": [
+    3.4,
+    1.1
+   ],
+   "aim": null,
+   "note": "Over the front edge of the counter, so you never stand in your own shadow"
+  },
+  {
+   "t": "D1",
+   "c": "KIT_D",
+   "p": [
+    4.0,
+    1.1
+   ],
+   "aim": null,
+   "note": "Over the front edge of the counter, so you never stand in your own shadow"
+  },
+  {
+   "t": "D1",
+   "c": "KIT_D",
+   "p": [
+    4.6,
+    1.1
+   ],
+   "aim": null,
+   "note": "Over the front edge of the counter, so you never stand in your own shadow"
+  },
+  {
+   "t": "D1",
+   "c": "KIT_D",
+   "p": [
+    5.4,
+    1.7
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "D1",
+   "c": "KIT_D",
+   "p": [
+    5.4,
+    2.7
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "L4",
+   "c": "KIT_SHELF",
+   "l": [
+    2.62,
+    0.55,
+    4.93,
+    0.55
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": "Lights the limestone splash and worktop"
+  },
+  {
+   "t": "P2",
+   "c": "KIT_PEND",
+   "p": [
+    2.95,
+    2.85
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "P2",
+   "c": "KIT_PEND",
+   "p": [
+    3.85,
+    2.85
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "L3",
+   "c": "KIT_PLINTH",
+   "l": [
+    2.24,
+    1.03,
+    5.45,
+    1.03
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": "Toe-kick"
+  },
+  {
+   "t": "L3",
+   "c": "KIT_PLINTH",
+   "l": [
+    5.45,
+    1.03,
+    5.45,
+    3.22
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "L3",
+   "c": "KIT_PLINTH",
+   "l": [
+    2.24,
+    3.33,
+    4.4,
+    3.33
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": "Under the overhang at the stools"
+  },
+  {
+   "t": "W1",
+   "c": "KIT_PLINTH",
+   "p": [
+    5.78,
+    3.65
+   ],
+   "aim": null,
+   "note": "Pantry interior"
+  },
+  {
+   "t": "D1",
+   "c": "COR_D",
+   "p": [
+    4.35,
+    5.0
+   ],
+   "aim": null,
+   "note": "At door thresholds only; dimmed to 30% in the evening"
+  },
+  {
+   "t": "D1",
+   "c": "COR_D",
+   "p": [
+    1.3,
+    5.33
+   ],
+   "aim": null,
+   "note": "At door thresholds only; dimmed to 30% in the evening"
+  },
+  {
+   "t": "D1",
+   "c": "COR_D",
+   "p": [
+    -0.45,
+    5.33
+   ],
+   "aim": null,
+   "note": "At door thresholds only; dimmed to 30% in the evening"
+  },
+  {
+   "t": "D1",
+   "c": "COR_D",
+   "p": [
+    -2.45,
+    5.33
+   ],
+   "aim": null,
+   "note": "At door thresholds only; dimmed to 30% in the evening"
+  },
+  {
+   "t": "D1",
+   "c": "COR_D",
+   "p": [
+    -3.95,
+    5.33
+   ],
+   "aim": null,
+   "note": "At door thresholds only; dimmed to 30% in the evening"
+  },
+  {
+   "t": "N1",
+   "c": "NIGHT",
+   "p": [
+    2.7,
+    4.81
+   ],
+   "aim": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "N1",
+   "c": "NIGHT",
+   "p": [
+    0.4,
+    4.81
+   ],
+   "aim": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "N1",
+   "c": "NIGHT",
+   "p": [
+    -1.45,
+    4.81
+   ],
+   "aim": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "N1",
+   "c": "NIGHT",
+   "p": [
+    -3.3,
+    4.81
+   ],
+   "aim": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "L5",
+   "c": "WC_MIRROR",
+   "l": [
+    2.08,
+    3.7,
+    2.08,
+    4.14
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "Halo behind a round mirror"
+  },
+  {
+   "t": "D2",
+   "c": "WC_PIN",
+   "p": [
+    1.88,
+    3.92
+   ],
+   "aim": [
+    0,
+    0
+   ],
+   "note": "One beam on the stone basin; the dark room around it stays dark"
+  },
+  {
+   "t": "D1",
+   "c": "BATH_D",
+   "p": [
+    -1.52,
+    3.8
+   ],
+   "aim": null,
+   "note": "IP65"
+  },
+  {
+   "t": "D1",
+   "c": "BATH_D",
+   "p": [
+    -0.3,
+    4.12
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "L5",
+   "c": "BATH_MIRROR",
+   "l": [
+    -0.85,
+    3.01,
+    -0.1,
+    3.01
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "L4",
+   "c": "BATH_NICHE",
+   "l": [
+    -1.83,
+    3.15,
+    -1.83,
+    4.45
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "D1",
+   "c": "LAUN_D",
+   "p": [
+    -2.73,
+    3.95
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "L1",
+   "c": "PASS_GRAZE",
+   "l": [
+    -3.51,
+    6.1,
+    -3.51,
+    9.45
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": "Raking light along 3.50 m of oak fluting"
+  },
+  {
+   "t": "L3",
+   "c": "NIGHT",
+   "l": [
+    -3.47,
+    6.08,
+    -3.47,
+    9.48
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "Light line at the wardrobe foot"
+  },
+  {
+   "t": "N1",
+   "c": "NIGHT",
+   "p": [
+    -4.4,
+    7.0
+   ],
+   "aim": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "N1",
+   "c": "NIGHT",
+   "p": [
+    -4.14,
+    8.8
+   ],
+   "aim": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "W1",
+   "c": "PASS_GRAZE",
+   "p": [
+    -3.15,
+    7.8
+   ],
+   "aim": null,
+   "note": "Inside every wardrobe bay"
+  },
+  {
+   "t": "L2",
+   "c": "MST_CURT",
+   "l": [
+    -6.45,
+    11.24,
+    -4.95,
+    11.24
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": "The glowing sheer behind the bed is the headboard light"
+  },
+  {
+   "t": "L2",
+   "c": "MST_CURT",
+   "l": [
+    -7.27,
+    9.06,
+    -7.27,
+    10.57
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "R1",
+   "c": "MST_READ",
+   "p": [
+    -6.75,
+    11.25
+   ],
+   "aim": [
+    0,
+    -1
+   ],
+   "note": ""
+  },
+  {
+   "t": "R1",
+   "c": "MST_READ",
+   "p": [
+    -4.65,
+    11.25
+   ],
+   "aim": [
+    0,
+    -1
+   ],
+   "note": ""
+  },
+  {
+   "t": "P5",
+   "c": "MST_LAMPS",
+   "p": [
+    -6.82,
+    11.06
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "P5",
+   "c": "MST_LAMPS",
+   "p": [
+    -4.57,
+    11.06
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "L1",
+   "c": "MST_ART",
+   "l": [
+    -7.25,
+    8.19,
+    -5.05,
+    8.19
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": "The wall you look at from the bed"
+  },
+  {
+   "t": "D2",
+   "c": "MST_ART",
+   "p": [
+    -6.2,
+    8.85
+   ],
+   "aim": [
+    0,
+    -1
+   ],
+   "note": ""
+  },
+  {
+   "t": "L3",
+   "c": "MST_NIGHT",
+   "l": [
+    -6.53,
+    9.35,
+    -6.53,
+    10.8
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "Comes on at 5% when a foot touches the floor"
+  },
+  {
+   "t": "L3",
+   "c": "MST_NIGHT",
+   "l": [
+    -4.87,
+    9.35,
+    -4.87,
+    10.8
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "D1",
+   "c": "ENS_D",
+   "p": [
+    -2.65,
+    10.88
+   ],
+   "aim": null,
+   "note": "IP65"
+  },
+  {
+   "t": "D1",
+   "c": "ENS_D",
+   "p": [
+    -3.45,
+    10.2
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "L5",
+   "c": "ENS_MIRROR",
+   "l": [
+    -2.22,
+    9.82,
+    -2.22,
+    10.38
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "L4",
+   "c": "ENS_NICHE",
+   "l": [
+    -3.05,
+    11.27,
+    -2.3,
+    11.27
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": ""
+  },
+  {
+   "t": "O1",
+   "c": "B3_DESK",
+   "l": [
+    0.95,
+    8.88,
+    2.15,
+    8.88
+   ],
+   "side": [
+    0,
+    0
+   ],
+   "note": "70% of its light goes up to the ceiling"
+  },
+  {
+   "t": "L1",
+   "c": "B3_GRAZE",
+   "l": [
+    1.86,
+    6.68,
+    3.32,
+    6.68
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": "Behind you on a video call: depth instead of a black hole"
+  },
+  {
+   "t": "B1",
+   "c": "B3_TV",
+   "l": [
+    0.63,
+    7.2,
+    0.63,
+    8.2
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "L2",
+   "c": "B3_CURT",
+   "l": [
+    1.2,
+    9.19,
+    2.6,
+    9.19
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": ""
+  },
+  {
+   "t": "T1",
+   "c": "MAM_TRACK",
+   "l": [
+    -2.0,
+    7.7,
+    -0.1,
+    7.7
+   ],
+   "side": [
+    0,
+    0
+   ],
+   "note": "Surface-mounted: no cutting in the safe-room ceiling"
+  },
+  {
+   "t": "L5",
+   "c": "MAM_MIRROR",
+   "l": [
+    0.28,
+    7.7,
+    0.28,
+    8.7
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "Surface profiles either side of the mirror"
+  },
+  {
+   "t": "P5",
+   "c": "MAM_LAMP",
+   "p": [
+    -0.97,
+    9.05
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "R1",
+   "c": "MAM_LAMP",
+   "p": [
+    -2.45,
+    9.25
+   ],
+   "aim": [
+    0,
+    -1
+   ],
+   "note": ""
+  },
+  {
+   "t": "L3",
+   "c": "MAM_COLOR",
+   "l": [
+    -2.55,
+    9.23,
+    -1.25,
+    9.23
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": "Halo behind the linen headboard; warm by default, any colour she likes"
+  },
+  {
+   "t": "K1",
+   "c": "B4_DISC",
+   "p": [
+    -6.1,
+    6.3
+   ],
+   "aim": null,
+   "note": "Over the play rug, not over the bed"
+  },
+  {
+   "t": "L2",
+   "c": "B4_CURT",
+   "l": [
+    -7.27,
+    5.52,
+    -7.27,
+    6.8
+   ],
+   "side": [
+    1,
+    0
+   ],
+   "note": ""
+  },
+  {
+   "t": "L4",
+   "c": "B4_BOOK",
+   "l": [
+    -6.95,
+    7.95,
+    -6.0,
+    7.95
+   ],
+   "side": [
+    0,
+    -1
+   ],
+   "note": "Under the top book ledge, for bedtime stories"
+  },
+  {
+   "t": "L3",
+   "c": "B4_NIGHT",
+   "l": [
+    -4.93,
+    6.07,
+    -4.93,
+    7.63
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "Amber 1800 K under the toy shelves: no blue light at night"
+  },
+  {
+   "t": "E2",
+   "c": "BAL_TREE",
+   "p": [
+    -1.45,
+    12.52
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "E2",
+   "c": "BAL_TREE",
+   "p": [
+    -1.05,
+    12.52
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "E2",
+   "c": "BAL_TREE",
+   "p": [
+    7.54,
+    11.0
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "E2",
+   "c": "BAL_TREE",
+   "p": [
+    7.54,
+    12.2
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "E3",
+   "c": "BAL_GLOW",
+   "l": [
+    7.27,
+    10.42,
+    7.27,
+    12.88
+   ],
+   "side": [
+    -1,
+    0
+   ],
+   "note": "Under the planter lip"
+  },
+  {
+   "t": "E1",
+   "c": "BAL_WALL",
+   "l": [
+    2.55,
+    9.76,
+    4.35,
+    9.76
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "E1",
+   "c": "BAL_WALL",
+   "l": [
+    -0.22,
+    9.76,
+    1.24,
+    9.76
+   ],
+   "side": [
+    0,
+    1
+   ],
+   "note": ""
+  },
+  {
+   "t": "E4",
+   "c": "BAL_TABLE",
+   "p": [
+    -0.6,
+    11.2
+   ],
+   "aim": null,
+   "note": ""
+  },
+  {
+   "t": "E4",
+   "c": "BAL_TABLE",
+   "p": [
+    0.2,
+    11.2
+   ],
+   "aim": null,
+   "note": ""
+  }
+ ],
+ "scenes": [
+  {
+   "id": "all",
+   "name": "All circuits",
+   "he": "כל המעגלים",
+   "when": "Plan view",
+   "keypad": "—",
+   "text": "Every fitting at a working level, to read the plan.",
+   "levels": {
+    "ENT_D": 60,
+    "ENT_NICHE": 60,
+    "ENT_SCREEN": 60,
+    "WALL_E": 60,
+    "WALL_MEDIA": 60,
+    "LIV_CURT": 60,
+    "LIV_PEND": 60,
+    "LIV_COL": 60,
+    "LIV_LANT": 60,
+    "LIV_ART": 60,
+    "LIV_TV": 60,
+    "LIV_CONSOLE": 60,
+    "KIT_D": 60,
+    "KIT_SHELF": 60,
+    "KIT_PEND": 60,
+    "KIT_PLINTH": 60,
+    "COR_D": 60,
+    "NIGHT": 60,
+    "WC_MIRROR": 60,
+    "WC_PIN": 60,
+    "BATH_D": 60,
+    "BATH_MIRROR": 60,
+    "BATH_NICHE": 60,
+    "LAUN_D": 60,
+    "PASS_GRAZE": 60,
+    "MST_CURT": 60,
+    "MST_READ": 60,
+    "MST_LAMPS": 60,
+    "MST_ART": 60,
+    "MST_NIGHT": 60,
+    "ENS_D": 60,
+    "ENS_MIRROR": 60,
+    "ENS_NICHE": 60,
+    "B3_DESK": 60,
+    "B3_GRAZE": 60,
+    "B3_TV": 60,
+    "B3_CURT": 60,
+    "MAM_TRACK": 60,
+    "MAM_MIRROR": 60,
+    "MAM_LAMP": 60,
+    "MAM_COLOR": 60,
+    "B4_DISC": 60,
+    "B4_CURT": 60,
+    "B4_BOOK": 60,
+    "B4_NIGHT": 60,
+    "BAL_TREE": 60,
+    "BAL_GLOW": 60,
+    "BAL_WALL": 60,
+    "BAL_TABLE": 60
+   }
+  },
+  {
+   "id": "welcome",
+   "name": "Welcome",
+   "he": "כניסה",
+   "when": "From 30 min before sunset, at the door",
+   "keypad": "Entry: top button",
+   "text": "Open the door at dusk: the bench niche glows, the east wall leads you in, and the paper lamps are already on by the glass.",
+   "levels": {
+    "ENT_NICHE": 80,
+    "ENT_D": 40,
+    "ENT_SCREEN": 60,
+    "WALL_E": 50,
+    "LIV_COL": 45,
+    "LIV_LANT": 45,
+    "KIT_PLINTH": 30,
+    "KIT_SHELF": 30,
+    "COR_D": 20,
+    "BAL_TREE": 30,
+    "BAL_GLOW": 25
+   }
+  },
+  {
+   "id": "evening",
+   "name": "Evening",
+   "he": "ערב",
+   "when": "Blue hour to 22:00",
+   "keypad": "Entry · living",
+   "text": "Walls lit, ceiling quiet, three paper glows. Light sits low and warm, like a ryokan after dark.",
+   "levels": {
+    "WALL_E": 55,
+    "WALL_MEDIA": 45,
+    "LIV_CURT": 35,
+    "LIV_PEND": 35,
+    "LIV_COL": 60,
+    "LIV_LANT": 55,
+    "LIV_ART": 70,
+    "LIV_CONSOLE": 30,
+    "ENT_NICHE": 45,
+    "ENT_SCREEN": 40,
+    "KIT_SHELF": 50,
+    "KIT_PEND": 40,
+    "KIT_PLINTH": 30,
+    "COR_D": 15,
+    "PASS_GRAZE": 30,
+    "WC_MIRROR": 40,
+    "WC_PIN": 40,
+    "MST_LAMPS": 40,
+    "MST_CURT": 30,
+    "B3_GRAZE": 20,
+    "BAL_TREE": 50,
+    "BAL_GLOW": 40,
+    "BAL_WALL": 25,
+    "BAL_TABLE": 60
+   }
+  },
+  {
+   "id": "cook",
+   "name": "Cooking",
+   "he": "בישול",
+   "when": "Any time",
+   "keypad": "Kitchen",
+   "text": "Full task light on the worktop and the peninsula; the living room stays at evening level so the open space still feels calm.",
+   "levels": {
+    "KIT_D": 100,
+    "KIT_SHELF": 100,
+    "KIT_PEND": 70,
+    "KIT_PLINTH": 40,
+    "WALL_E": 40,
+    "WALL_MEDIA": 30,
+    "LIV_COL": 40,
+    "LIV_LANT": 35,
+    "LIV_ART": 50,
+    "ENT_NICHE": 30
+   }
+  },
+  {
+   "id": "view",
+   "name": "Bay view",
+   "he": "נוף",
+   "when": "After 20:00",
+   "keypad": "Living: bottom button",
+   "text": "Glass turns into a mirror when the room is brighter than the night. Everything near the slider drops to a glow and the balcony comes up a little, so you see Haifa Bay's lights instead of yourself.",
+   "levels": {
+    "LIV_COL": 12,
+    "LIV_LANT": 15,
+    "WALL_E": 12,
+    "LIV_ART": 25,
+    "LIV_CONSOLE": 10,
+    "KIT_PLINTH": 12,
+    "ENT_NICHE": 12,
+    "BAL_TREE": 25,
+    "BAL_GLOW": 20,
+    "BAL_WALL": 10,
+    "BAL_TABLE": 30
+   }
+  },
+  {
+   "id": "film",
+   "name": "Film",
+   "he": "סרט",
+   "when": "Any time",
+   "keypad": "Living",
+   "text": "Bias light behind the screen, the console floating at 10%, the art barely there. Enough to find your glass.",
+   "levels": {
+    "LIV_TV": 30,
+    "LIV_CONSOLE": 10,
+    "WALL_E": 8,
+    "LIV_ART": 10,
+    "KIT_PLINTH": 8
+   }
+  },
+  {
+   "id": "bedtime",
+   "name": "Bedtime",
+   "he": "שינה",
+   "when": "21:00 onwards",
+   "keypad": "Each bedroom",
+   "text": "Public rooms fade out over ten minutes. Reading lights, paper lamps and the story light, all at 2200 K or warmer.",
+   "levels": {
+    "MST_READ": 60,
+    "MST_LAMPS": 30,
+    "MST_NIGHT": 10,
+    "PASS_GRAZE": 15,
+    "B4_BOOK": 50,
+    "B4_NIGHT": 10,
+    "MAM_LAMP": 50,
+    "MAM_COLOR": 30,
+    "ENS_MIRROR": 20,
+    "BATH_MIRROR": 30,
+    "NIGHT": 10,
+    "B3_TV": 0
+   }
+  },
+  {
+   "id": "night",
+   "name": "Night path",
+   "he": "לילה",
+   "when": "23:00–06:00, by presence",
+   "keypad": "Automatic",
+   "text": "A foot on the floor brings up a 5% amber line: under the bed, along the wardrobe walk, at the step lights to the bathroom. Nothing at eye level.",
+   "levels": {
+    "NIGHT": 8,
+    "MST_NIGHT": 8,
+    "B4_NIGHT": 6,
+    "KIT_PLINTH": 5,
+    "ENS_MIRROR": 5,
+    "BATH_MIRROR": 5,
+    "WC_MIRROR": 5
+   }
+  }
+ ],
+ "targets": [
+  [
+   "Kitchen worktop",
+   "500 lx",
+   "D1 + L4"
+  ],
+  [
+   "Desk",
+   "500 lx, tunable",
+   "O1"
+  ],
+  [
+   "Bathroom mirror, on the face",
+   "300 lx vertical",
+   "L5"
+  ],
+  [
+   "Living room, evening",
+   "50–100 lx",
+   "Walls + paper"
+  ],
+  [
+   "Living walls (vertical)",
+   "60–120 lx",
+   "L1"
+  ],
+  [
+   "Corridor, evening",
+   "30 lx",
+   "D1 at 30%"
+  ],
+  [
+   "Night path",
+   "2–5 lx on the floor",
+   "L3 + N1"
+  ],
+  [
+   "Toddler room, night",
+   "< 2 lx, 1800 K",
+   "L3"
+  ],
+  [
+   "Balcony, Bay view",
+   "5–10 lx",
+   "E2 + E3"
+  ]
+ ]
+}

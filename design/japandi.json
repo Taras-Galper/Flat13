@@ -1,0 +1,1310 @@
+{
+ "zones": [
+  [
+   "living",
+   [
+    3.49,
+    7.77,
+    5.92,
+    9.25
+   ],
+   "ivory"
+  ],
+  [
+   "living",
+   [
+    3.49,
+    5.2,
+    4.05,
+    5.92
+   ],
+   "ivory"
+  ],
+  [
+   "entry",
+   [
+    5.2,
+    7.77,
+    4.35,
+    5.92
+   ],
+   "ivory"
+  ],
+  [
+   "kitchen",
+   [
+    2.22,
+    6.08,
+    0.39,
+    4.05
+   ],
+   "ivory"
+  ],
+  [
+   "kitchen",
+   [
+    2.11,
+    3.49,
+    4.05,
+    4.75
+   ],
+   "ivory"
+  ],
+  [
+   "corridor",
+   [
+    -4.43,
+    3.49,
+    4.75,
+    5.92
+   ],
+   "ivory"
+  ],
+  [
+   "wc",
+   [
+    0.98,
+    2.11,
+    2.95,
+    4.65
+   ],
+   "woodtile"
+  ],
+  [
+   "bath",
+   [
+    -1.87,
+    0.88,
+    2.95,
+    4.67
+   ],
+   "ivory"
+  ],
+  [
+   "laundry",
+   [
+    -3.47,
+    -1.99,
+    2.95,
+    4.67
+   ],
+   "ivory"
+  ],
+  [
+   "service",
+   [
+    -7.79,
+    -3.6,
+    2.65,
+    4.4
+   ],
+   "micro"
+  ],
+  [
+   "bed4",
+   [
+    -7.34,
+    -4.53,
+    4.73,
+    8.02
+   ],
+   "ivory"
+  ],
+  [
+   "passage",
+   [
+    -4.43,
+    -2.85,
+    5.92,
+    9.53
+   ],
+   "ivory"
+  ],
+  [
+   "passage",
+   [
+    -4.17,
+    -2.85,
+    8.02,
+    9.53
+   ],
+   "ivory"
+  ],
+  [
+   "master",
+   [
+    -7.34,
+    -4.17,
+    8.12,
+    11.31
+   ],
+   "ivory"
+  ],
+  [
+   "ensuite",
+   [
+    -4.07,
+    -2.19,
+    9.73,
+    11.31
+   ],
+   "ivory"
+  ],
+  [
+   "mamad",
+   [
+    -2.6,
+    0.32,
+    6.16,
+    9.33
+   ],
+   "ivory"
+  ],
+  [
+   "bed3",
+   [
+    0.56,
+    3.39,
+    6.01,
+    9.25
+   ],
+   "ivory"
+  ],
+  [
+   "terrace",
+   [
+    -1.73,
+    7.8,
+    9.7,
+    12.98
+   ],
+   "woodtile"
+  ],
+  [
+   "landing",
+   [
+    6.4,
+    10.4,
+    0.9,
+    4.1
+   ],
+   "lime"
+  ]
+ ],
+ "furniture": [
+  {
+   "kind": "mat",
+   "rect": [
+    6.75,
+    7.55,
+    4.4,
+    5.0
+   ],
+   "mat": "jute",
+   "label": "Coir mat set flush into the tile: the genkan line",
+   "room": "entry",
+   "h": 0.0
+  },
+  {
+   "kind": "cabinet",
+   "rect": [
+    5.25,
+    6.55,
+    4.35,
+    4.75
+   ],
+   "mat": "oak",
+   "label": "Shoe cabinet with seat niche, fluted oak, h 2.40, on the wall west of the door; one door hides the electrical panel",
+   "room": "entry",
+   "h": 2.4
+  },
+  {
+   "kind": "screen",
+   "rect": [
+    7.02,
+    7.77,
+    6.04,
+    6.1
+   ],
+   "mat": "oak",
+   "label": "Slatted oak screen, h 2.10 — hides the sofa from the door",
+   "room": "entry",
+   "h": 2.1
+  },
+  {
+   "kind": "rug",
+   "rect": [
+    4.8,
+    6.8,
+    6.0,
+    9.0
+   ],
+   "mat": "jute",
+   "label": "IKEA LOHALS flatwoven jute rug 200 × 300, natural",
+   "room": "living",
+   "h": 0.01
+  },
+  {
+   "kind": "sofa",
+   "rect": [
+    6.81,
+    7.74,
+    6.44,
+    8.76
+   ],
+   "mat": "boucle",
+   "label": "IKEA HYLTARP 3-seat sofa 232 × 93, Gransel natural",
+   "room": "living",
+   "facing": "W",
+   "h": 0.91
+  },
+  {
+   "kind": "lounge",
+   "rect": [
+    4.76,
+    5.54,
+    5.79,
+    6.53
+   ],
+   "mat": "boucle",
+   "label": "IKEA STOCKHOLM 2025 armchair 78 × 74, Djurmo grey/white bouclé, solid oak legs",
+   "room": "living",
+   "facing": "N",
+   "h": 0.68
+  },
+  {
+   "kind": "lounge",
+   "rect": [
+    5.76,
+    6.54,
+    5.79,
+    6.53
+   ],
+   "mat": "boucle",
+   "label": "IKEA STOCKHOLM 2025 armchair 78 × 74, Djurmo grey/white bouclé, solid oak legs",
+   "room": "living",
+   "facing": "N",
+   "h": 0.68
+  },
+  {
+   "kind": "table",
+   "circle": [
+    5.92,
+    7.55,
+    0.45
+   ],
+   "mat": "oak",
+   "label": "IKEA LISTERBY coffee table Ø90, h 45, oak veneer with a solid oak shelf",
+   "room": "living",
+   "h": 0.45
+  },
+  {
+   "kind": "table",
+   "circle": [
+    6.55,
+    8.93,
+    0.25
+   ],
+   "mat": "smoked",
+   "label": "IKEA LISTERBY side table Ø50, h 56, dark brown stained oak",
+   "room": "living",
+   "h": 0.56
+  },
+  {
+   "kind": "console",
+   "rect": [
+    3.49,
+    3.91,
+    6.5,
+    8.9
+   ],
+   "mat": "oak",
+   "label": "Two IKEA BESTÅ TV benches 120 × 42 × 48 side by side (240), white stained oak effect, on their own legs",
+   "room": "living",
+   "h": 0.49
+  },
+  {
+   "kind": "panel",
+   "rect": [
+    3.49,
+    3.53,
+    6.7,
+    8.7
+   ],
+   "mat": "clay",
+   "label": "Clay-plaster media wall, TV recessed flush",
+   "room": "living",
+   "h": 2.7
+  },
+  {
+   "kind": "floorlamp",
+   "circle": [
+    4.1,
+    8.85,
+    0.09
+   ],
+   "mat": "washi",
+   "label": "IKEA VIDJA floor lamp Ø18, h 137: a slim paper-white column in the corner by the glass",
+   "room": "living",
+   "h": 1.37
+  },
+  {
+   "kind": "lantern",
+   "circle": [
+    7.48,
+    6.25,
+    0.11
+   ],
+   "mat": "washi",
+   "label": "IKEA HÖLMÖ rice-paper floor lamp Ø22, h 117",
+   "room": "living",
+   "h": 1.17
+  },
+  {
+   "kind": "pendant",
+   "circle": [
+    5.92,
+    7.55,
+    0.45
+   ],
+   "mat": "washi",
+   "label": "IKEA PS 2026 handmade rice-paper pendant Ø90 × 33",
+   "room": "living",
+   "overhead": true
+  },
+  {
+   "kind": "curtain",
+   "rect": [
+    4.25,
+    7.75,
+    9.12,
+    9.2
+   ],
+   "mat": "linen",
+   "label": "Ceiling-recessed linen sheers",
+   "room": "living",
+   "h": 2.7
+  },
+  {
+   "kind": "art",
+   "rect": [
+    7.74,
+    7.77,
+    6.95,
+    8.15
+   ],
+   "mat": "art",
+   "label": "One large sumi-ink canvas on raw linen",
+   "room": "living",
+   "h": 2.0
+  },
+  {
+   "kind": "counter",
+   "rect": [
+    2.22,
+    5.48,
+    0.39,
+    1.0
+   ],
+   "mat": "oak",
+   "label": "Base run: oak fronts, handle-less, honed limestone top",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "counter",
+   "rect": [
+    5.48,
+    6.08,
+    0.39,
+    3.24
+   ],
+   "mat": "oak",
+   "label": "Base run: oak fronts, honed limestone top",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "tall",
+   "rect": [
+    5.48,
+    6.08,
+    3.24,
+    4.05
+   ],
+   "mat": "oak",
+   "label": "Tall oak column: integrated fridge + pantry",
+   "room": "kitchen",
+   "h": 2.4
+  },
+  {
+   "kind": "shelf",
+   "rect": [
+    2.6,
+    4.95,
+    0.39,
+    0.66
+   ],
+   "mat": "oak",
+   "label": "One floating oak shelf instead of wall cabinets, h 1.55",
+   "room": "kitchen",
+   "overhead": true
+  },
+  {
+   "kind": "hob",
+   "rect": [
+    3.1,
+    3.7,
+    0.47,
+    0.95
+   ],
+   "mat": "black",
+   "label": "Induction hob, black glass",
+   "room": "kitchen",
+   "h": 0.93
+  },
+  {
+   "kind": "sink",
+   "rect": [
+    4.3,
+    4.9,
+    0.5,
+    0.92
+   ],
+   "mat": "limestone",
+   "label": "Under-mount sink, brushed bronze tap",
+   "room": "kitchen",
+   "h": 0.93
+  },
+  {
+   "kind": "peninsula",
+   "rect": [
+    2.22,
+    4.42,
+    2.4,
+    3.3
+   ],
+   "mat": "oak",
+   "label": "Peninsula 2.20 × 0.90 docked to the west wall: oak base, honed limestone top falling to the floor at the free end",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "stool",
+   "circle": [
+    2.62,
+    3.62,
+    0.2
+   ],
+   "mat": "black",
+   "label": "IKEA ROSENTORP counter stool with backrest, black, seat h 63",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "stool",
+   "circle": [
+    3.17,
+    3.62,
+    0.2
+   ],
+   "mat": "black",
+   "label": "IKEA ROSENTORP counter stool with backrest, black, seat h 63",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "stool",
+   "circle": [
+    3.72,
+    3.62,
+    0.2
+   ],
+   "mat": "black",
+   "label": "IKEA ROSENTORP counter stool with backrest, black, seat h 63",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "stool",
+   "circle": [
+    4.27,
+    3.62,
+    0.2
+   ],
+   "mat": "black",
+   "label": "IKEA ROSENTORP counter stool with backrest, black, seat h 63",
+   "room": "kitchen",
+   "h": 0.92
+  },
+  {
+   "kind": "pendant",
+   "circle": [
+    2.95,
+    2.85,
+    0.22
+   ],
+   "mat": "washi",
+   "label": "Two small washi pendants over the peninsula",
+   "room": "kitchen",
+   "overhead": true
+  },
+  {
+   "kind": "pendant",
+   "circle": [
+    3.85,
+    2.85,
+    0.22
+   ],
+   "mat": "washi",
+   "label": "Two small washi pendants over the peninsula",
+   "room": "kitchen",
+   "overhead": true
+  },
+  {
+   "kind": "vanity",
+   "rect": [
+    1.74,
+    2.11,
+    3.62,
+    4.22
+   ],
+   "mat": "smoked",
+   "label": "Floating smoked-oak shelf + stone basin, dark plank floor runs up as a skirting",
+   "room": "wc",
+   "h": 0.85
+  },
+  {
+   "kind": "wc",
+   "rect": [
+    1.24,
+    1.62,
+    2.97,
+    3.52
+   ],
+   "mat": "ceramic",
+   "label": "Wall-hung WC",
+   "room": "wc",
+   "h": 0.42
+  },
+  {
+   "kind": "tub",
+   "rect": [
+    -1.85,
+    -1.2,
+    2.97,
+    4.63
+   ],
+   "mat": "limestone",
+   "label": "Built-in tub clad in the ivory tile, oak slat mat",
+   "room": "bath",
+   "h": 0.55
+  },
+  {
+   "kind": "vanity",
+   "rect": [
+    -0.87,
+    -0.08,
+    2.97,
+    3.48
+   ],
+   "mat": "oak",
+   "label": "Floating oak vanity + vessel basin",
+   "room": "bath",
+   "h": 0.85
+  },
+  {
+   "kind": "wc",
+   "rect": [
+    0.12,
+    0.46,
+    2.97,
+    3.52
+   ],
+   "mat": "ceramic",
+   "label": "Wall-hung WC",
+   "room": "bath",
+   "h": 0.42
+  },
+  {
+   "kind": "appliance",
+   "rect": [
+    -3.44,
+    -2.22,
+    2.97,
+    3.57
+   ],
+   "mat": "oak",
+   "label": "Washer + dryer under an oak worktop, doors hide all",
+   "room": "laundry",
+   "h": 0.9
+  },
+  {
+   "kind": "shower",
+   "rect": [
+    -3.12,
+    -2.19,
+    10.47,
+    11.29
+   ],
+   "mat": "micro",
+   "label": "Walk-in shower, ivory tile floor to linear drain, fluted glass screen",
+   "room": "ensuite",
+   "h": 2.0
+  },
+  {
+   "kind": "vanity",
+   "rect": [
+    -2.68,
+    -2.19,
+    9.75,
+    10.45
+   ],
+   "mat": "oak",
+   "label": "Floating oak vanity",
+   "room": "ensuite",
+   "h": 0.85
+  },
+  {
+   "kind": "wc",
+   "rect": [
+    -3.88,
+    -3.52,
+    10.85,
+    11.29
+   ],
+   "mat": "ceramic",
+   "label": "Wall-hung WC",
+   "room": "ensuite",
+   "h": 0.42
+  },
+  {
+   "kind": "desk",
+   "rect": [
+    0.6,
+    2.45,
+    8.55,
+    9.25
+   ],
+   "mat": "oak",
+   "label": "Office desk 1.85 × 0.70 under the window, solid oak, cable tray + monitor arm",
+   "room": "bed3",
+   "h": 0.75
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    1.5,
+    8.1,
+    0.3
+   ],
+   "mat": "wool",
+   "label": "Ergonomic task chair, charcoal wool",
+   "room": "bed3",
+   "h": 1.1
+  },
+  {
+   "kind": "media",
+   "rect": [
+    0.56,
+    0.98,
+    6.95,
+    8.45
+   ],
+   "mat": "oak",
+   "label": "Low media cabinet for consoles, oak, ventilated fronts",
+   "room": "bed3",
+   "h": 0.45
+  },
+  {
+   "kind": "tv",
+   "rect": [
+    0.56,
+    0.62,
+    7.1,
+    8.3
+   ],
+   "mat": "black",
+   "label": "55\" screen on the west wall over a slatted-oak acoustic panel",
+   "room": "bed3",
+   "h": 1.6
+  },
+  {
+   "kind": "sofa",
+   "rect": [
+    6.81,
+    7.74,
+    6.44,
+    8.76
+   ],
+   "mat": "boucle",
+   "label": "IKEA HYLTARP 3-seat sofa 232 × 93, Gransel natural",
+   "room": "living",
+   "facing": "W",
+   "h": 0.91
+  },
+  {
+   "kind": "rug",
+   "rect": [
+    1.2,
+    2.45,
+    6.95,
+    8.3
+   ],
+   "mat": "jute",
+   "label": "Dense wool rug 1.25 × 1.35 (quiet under the chair)",
+   "room": "bed3",
+   "h": 0.01
+  },
+  {
+   "kind": "wardrobe",
+   "rect": [
+    1.79,
+    3.39,
+    6.01,
+    6.61
+   ],
+   "mat": "oak",
+   "label": "Fluted-oak storage wall: files, controllers, guest bedding",
+   "room": "bed3",
+   "h": 2.7
+  },
+  {
+   "kind": "bed",
+   "rect": [
+    -2.6,
+    -1.2,
+    7.25,
+    9.28
+   ],
+   "mat": "linen",
+   "label": "Low oak platform bed 1.40 × 2.00, upholstered linen headboard",
+   "room": "mamad",
+   "head": "N",
+   "h": 0.45
+  },
+  {
+   "kind": "night",
+   "rect": [
+    -1.15,
+    -0.8,
+    8.85,
+    9.25
+   ],
+   "mat": "oak",
+   "label": "Floating oak nightstand + paper lamp",
+   "room": "mamad",
+   "h": 0.5
+  },
+  {
+   "kind": "desk",
+   "rect": [
+    -0.4,
+    0.22,
+    7.2,
+    9.28
+   ],
+   "mat": "oak",
+   "label": "Desk + dressing table 2.10 long, wall mirror and pegboard above",
+   "room": "mamad",
+   "h": 0.75
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    -0.75,
+    8.0,
+    0.24
+   ],
+   "mat": "boucle",
+   "label": "Bouclé desk chair",
+   "room": "mamad",
+   "h": 0.8
+  },
+  {
+   "kind": "wardrobe",
+   "rect": [
+    -2.6,
+    -1.0,
+    6.16,
+    6.76
+   ],
+   "mat": "oak",
+   "label": "Fluted-oak wardrobe with an inner full-length mirror",
+   "room": "mamad",
+   "h": 2.7
+  },
+  {
+   "kind": "floorbed",
+   "rect": [
+    -7.3,
+    -5.38,
+    7.12,
+    8.0
+   ],
+   "mat": "linen",
+   "label": "House-frame floor bed 0.90 × 1.90, oak, mattress h 0.20 — grows with her",
+   "room": "bed4",
+   "head": "W",
+   "h": 1.5
+  },
+  {
+   "kind": "rug_round",
+   "circle": [
+    -6.25,
+    6.15,
+    0.8
+   ],
+   "mat": "jute",
+   "label": "Round wool play rug Ø1.60",
+   "room": "bed4",
+   "h": 0.01
+  },
+  {
+   "kind": "shelf_low",
+   "rect": [
+    -4.9,
+    -4.55,
+    6.05,
+    7.65
+   ],
+   "mat": "oak",
+   "label": "Low open toy shelves h 0.55, everything at her height",
+   "room": "bed4",
+   "h": 0.55
+  },
+  {
+   "kind": "table",
+   "circle": [
+    -5.35,
+    6.95,
+    0.3
+   ],
+   "mat": "oak",
+   "label": "Child table Ø0.60 + two small chairs",
+   "room": "bed4",
+   "h": 0.46
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    -5.35,
+    6.48,
+    0.15
+   ],
+   "mat": "oak",
+   "label": "Child chair",
+   "room": "bed4",
+   "h": 0.5
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    -4.95,
+    7.3,
+    0.15
+   ],
+   "mat": "oak",
+   "label": "Child chair",
+   "room": "bed4",
+   "h": 0.5
+  },
+  {
+   "kind": "books",
+   "rect": [
+    -6.95,
+    -6.0,
+    7.98,
+    8.02
+   ],
+   "mat": "oak",
+   "label": "Face-out book ledges by the bed",
+   "room": "bed4",
+   "h": 1.0
+  },
+  {
+   "kind": "wardrobe",
+   "rect": [
+    -7.34,
+    -5.74,
+    4.73,
+    5.33
+   ],
+   "mat": "oak",
+   "label": "Fluted-oak wardrobe, low rail inside for her own clothes",
+   "room": "bed4",
+   "h": 2.7
+  },
+  {
+   "kind": "bed",
+   "rect": [
+    -6.5,
+    -4.9,
+    9.3,
+    11.31
+   ],
+   "mat": "linen",
+   "label": "Low oak platform bed 1.60 × 2.00, linen, low headboard below the window",
+   "room": "master",
+   "head": "N",
+   "h": 0.45
+  },
+  {
+   "kind": "night",
+   "rect": [
+    -7.05,
+    -6.6,
+    10.85,
+    11.28
+   ],
+   "mat": "oak",
+   "label": "Floating oak nightstand + paper lamp",
+   "room": "master",
+   "h": 0.45
+  },
+  {
+   "kind": "night",
+   "rect": [
+    -4.8,
+    -4.35,
+    10.85,
+    11.28
+   ],
+   "mat": "oak",
+   "label": "Floating oak nightstand + paper lamp",
+   "room": "master",
+   "h": 0.45
+  },
+  {
+   "kind": "bench",
+   "rect": [
+    -7.3,
+    -5.1,
+    8.12,
+    8.5
+   ],
+   "mat": "oak",
+   "label": "Low oak sideboard / bench under the art",
+   "room": "master",
+   "h": 0.45
+  },
+  {
+   "kind": "rug",
+   "rect": [
+    -4.3,
+    -3.55,
+    6.3,
+    9.2
+   ],
+   "mat": "jute",
+   "label": "Long linen-wool runner down the wardrobe walk",
+   "room": "passage",
+   "h": 0.01
+  },
+  {
+   "kind": "rug",
+   "rect": [
+    -6.7,
+    -4.7,
+    8.65,
+    9.25
+   ],
+   "mat": "jute",
+   "label": "Wool rug at the foot of the bed",
+   "room": "master",
+   "h": 0.01
+  },
+  {
+   "kind": "wardrobe",
+   "rect": [
+    -3.44,
+    -2.85,
+    6.05,
+    9.53
+   ],
+   "mat": "oak",
+   "label": "Fluted-oak wardrobe wall, 3.50 long — the dressing walk",
+   "room": "passage",
+   "h": 2.7
+  },
+  {
+   "kind": "outdoor_sofa",
+   "rect": [
+    1.5,
+    3.4,
+    9.82,
+    10.56
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ 3-seat outdoor sofa: three modular easy chairs 63 cm, light brown stained acacia, Frösön/Duvholmen beige — faces the bay",
+   "room": "terrace",
+   "h": 0.82
+  },
+  {
+   "kind": "outdoor_table",
+   "rect": [
+    1.85,
+    3.05,
+    10.95,
+    11.5
+   ],
+   "mat": "teak",
+   "label": "Low slatted acacia table to match",
+   "room": "terrace",
+   "h": 0.35
+  },
+  {
+   "kind": "dining_out",
+   "rect": [
+    -1.0,
+    0.4,
+    10.83,
+    11.58
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ outdoor table 140 × 75, light brown stained acacia — six armchairs, diners face the sea at sunset",
+   "room": "terrace",
+   "h": 0.75
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    -0.62,
+    10.5,
+    0.28
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ armchair, seat h 42",
+   "room": "terrace",
+   "h": 0.86,
+   "face": 90
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    0.02,
+    10.5,
+    0.28
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ armchair, seat h 42",
+   "room": "terrace",
+   "h": 0.86,
+   "face": 90
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    -0.62,
+    11.91,
+    0.28
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ armchair, seat h 42",
+   "room": "terrace",
+   "h": 0.86,
+   "face": -90
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    0.02,
+    11.91,
+    0.28
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ armchair, seat h 42",
+   "room": "terrace",
+   "h": 0.86,
+   "face": -90
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    -1.3,
+    11.205,
+    0.28
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ armchair, seat h 42",
+   "room": "terrace",
+   "h": 0.86,
+   "face": 0
+  },
+  {
+   "kind": "chair",
+   "circle": [
+    0.7,
+    11.205,
+    0.28
+   ],
+   "mat": "teak",
+   "label": "IKEA NÄMMARÖ armchair, seat h 42",
+   "room": "terrace",
+   "h": 0.86,
+   "face": 180
+  },
+  {
+   "kind": "planter",
+   "rect": [
+    7.3,
+    7.78,
+    10.4,
+    12.9
+   ],
+   "mat": "planter",
+   "label": "Low planter: rosemary and feather grass, kept below the rail",
+   "room": "terrace",
+   "h": 0.45
+  },
+  {
+   "kind": "plant",
+   "circle": [
+    -1.25,
+    12.55,
+    0.5
+   ],
+   "mat": "plant",
+   "label": "Leafy potted plant in a wide terracotta bowl, about 1.6 m tall, in the north-west corner",
+   "room": "terrace",
+   "h": 1.6
+  }
+ ],
+ "finishes": {
+  "ivory": {
+   "fill": "#ECE5D8",
+   "line": "#D9D0C1",
+   "step": 0.6,
+   "dir": "grid",
+   "name": "Ivory porcelain 60×60, matt (Studio Ceramica)"
+  },
+  "woodtile": {
+   "fill": "#7A6250",
+   "line": "#5E4A3C",
+   "step": 0.15,
+   "dir": "x",
+   "name": "Dark wood-look porcelain 50×15"
+  },
+  "oak": {
+   "fill": "#E7D6BE",
+   "line": "#D6C1A2",
+   "step": 0.2,
+   "dir": "x",
+   "name": "Wide-plank white oak, matt oil"
+  },
+  "lime": {
+   "fill": "#E4DED2",
+   "line": "#D3CBBD",
+   "step": 0.6,
+   "dir": "grid",
+   "name": "Honed limestone, 60×60"
+  },
+  "micro": {
+   "fill": "#D9D3C9",
+   "line": null,
+   "step": 0,
+   "dir": null,
+   "name": "Warm-grey microcement"
+  },
+  "deck": {
+   "fill": "#D3CCC1",
+   "line": "#BFB6A8",
+   "step": 0.14,
+   "dir": "x",
+   "name": "Thermo-ash decking"
+  },
+  "genkan": {
+   "fill": "#D8CDBB",
+   "line": "#C4B79F",
+   "step": 0.45,
+   "dir": "grid",
+   "name": "Tumbled travertine, genkan step"
+  }
+ },
+ "palette": [
+  {
+   "key": "lime",
+   "name": "Limewash",
+   "use": "All walls and ceilings",
+   "hex": "#ECE6DC",
+   "swatch": "beige_wall_001"
+  },
+  {
+   "key": "ivory",
+   "name": "Ivory porcelain 60×60",
+   "use": "Every floor but two: your Studio Ceramica tile",
+   "hex": "#E9E1D2",
+   "swatch": "tile_ivory"
+  },
+  {
+   "key": "oak",
+   "name": "Rift oak, fluted",
+   "use": "Wardrobes, kitchen, screens",
+   "hex": "#C9A57A",
+   "swatch": "white_oak_veneer"
+  },
+  {
+   "key": "clay",
+   "name": "Clay plaster",
+   "use": "Media wall, bed walls",
+   "hex": "#B8AA98",
+   "swatch": "plastered_wall_04"
+  },
+  {
+   "key": "limestone",
+   "name": "Honed limestone",
+   "use": "Kitchen top, tub, coffee table",
+   "hex": "#DDD3C2",
+   "swatch": "marble_01"
+  },
+  {
+   "key": "boucle",
+   "name": "Oatmeal bouclé",
+   "use": "Sofa, bench cushions",
+   "hex": "#E3D8C6",
+   "swatch": "curly_teddy_natural"
+  },
+  {
+   "key": "jute",
+   "name": "Wool and jute",
+   "use": "Rugs, woven baskets",
+   "hex": "#9E8E74",
+   "swatch": "hessian_230"
+  },
+  {
+   "key": "wool",
+   "name": "Charcoal wool",
+   "use": "Lounge chairs, throws",
+   "hex": "#3F3B36",
+   "swatch": "poly_wool_herringbone"
+  },
+  {
+   "key": "smoked",
+   "name": "Smoked oak",
+   "use": "Small accents only",
+   "hex": "#4A3C30",
+   "swatch": "_smoked"
+  },
+  {
+   "key": "washi",
+   "name": "Washi paper",
+   "use": "Every pendant and lantern",
+   "hex": "#F2EBDD",
+   "swatch": "_washi"
+  },
+  {
+   "key": "sage",
+   "name": "Sage linen",
+   "use": "Bedding, one cushion per room",
+   "hex": "#9AA08A",
+   "swatch": "_sage"
+  },
+  {
+   "key": "woodtile",
+   "name": "Wood-look porcelain 50×15",
+   "use": "Balcony and guest WC: your dark plank",
+   "hex": "#6E5848",
+   "swatch": "tile_wood"
+  }
+ ]
+}

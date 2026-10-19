@@ -1,0 +1,825 @@
+<title>Bay Apartment Lighting</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;600&family=Instrument+Sans:wght@400;500;600&family=Noto+Serif+Hebrew:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; the night plan is the hero and sits on its own dark ground in both themes */
+:root {
+  --bg: #F0EBE2; --card: #F7F3EC; --ink: #2A2724; --muted: #6E665C; --line: #D9D1C4; --amber: #A8661F; --night: #0F1114; --night-ink: #E9E2D5; --night-muted: #9B958A;
+  --display: "Shippori Mincho B1", "Noto Serif Hebrew", Georgia, serif;
+  --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --he: "Noto Serif Hebrew", "Frank Ruhl Libre", serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1C1B19; --card: #24221F; --ink: #ECE6DC; --muted: #A69D90; --line: #3A3631; --amber: #E6A55C; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #1C1B19; --card: #24221F; --ink: #ECE6DC; --muted: #A69D90; --line: #3A3631; --amber: #E6A55C; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--body); }
+.wrap > *, .stage > * { min-width: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 48px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 72px; }
+.eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); margin: 0; }
+h1 { font: 600 clamp(36px, 6vw, 64px)/1.05 var(--display); margin: 10px 0 0; text-wrap: balance; letter-spacing: -.01em; }
+h1 .he { display: block; font: 500 .45em/1.3 var(--he); color: var(--muted); margin-top: 10px; }
+h2 { font: 600 28px/1.2 var(--display); margin: 0; text-wrap: balance; }
+.lede { max-width: 64ch; font-size: 18px; margin: 18px 0 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; font: 400 13px/1.5 var(--mono); color: var(--muted); }
+.sec-head { display: grid; gap: 8px; margin-bottom: 24px; }
+.sec-head p { margin: 0; max-width: 64ch; color: var(--muted); }
+.muted { color: var(--muted); }
+
+/* night plan */
+.stage { background: var(--night); color: var(--night-ink); display: grid; gap: 0; }
+.scenes { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 14px 0; }
+.scn { appearance: none; border: 1px solid #34373E; background: transparent; color: var(--night-muted); font: 500 13px/1.2 var(--body); padding: 8px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; }
+.scn .he { font: 400 12px var(--he); opacity: .8; }
+.scn[aria-pressed="true"] { background: #F2B872; border-color: #F2B872; color: #1A1408; }
+.scn:focus-visible, .lay:focus-visible { outline: 2px solid #F2B872; outline-offset: 2px; }
+.planbox { overflow-x: auto; padding: 8px 14px; }
+.nplan { display: block; width: 100%; min-width: 680px; height: auto; }
+.nplan .g { transition: opacity .9s ease; }
+.nplan .f { cursor: help; transition: opacity .3s; }
+.nplan[data-hl] .f { opacity: .25; }
+.nplan[data-hl="L1"] .f[data-t="L1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="L2"] .f[data-t="L2"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="L3"] .f[data-t="L3"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="L4"] .f[data-t="L4"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="L5"] .f[data-t="L5"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="D1"] .f[data-t="D1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="D2"] .f[data-t="D2"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="P1"] .f[data-t="P1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="P2"] .f[data-t="P2"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="P3"] .f[data-t="P3"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="P4"] .f[data-t="P4"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="P5"] .f[data-t="P5"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="R1"] .f[data-t="R1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="O1"] .f[data-t="O1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="B1"] .f[data-t="B1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="K1"] .f[data-t="K1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="T1"] .f[data-t="T1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="W1"] .f[data-t="W1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="N1"] .f[data-t="N1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="E1"] .f[data-t="E1"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="E2"] .f[data-t="E2"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="E3"] .f[data-t="E3"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-hl="E4"] .f[data-t="E4"]{opacity:1;filter:drop-shadow(0 0 4px #fff)}.nplan[data-off~="wall"] [data-l="wall"]{display:none}.nplan[data-off~="task"] [data-l="task"]{display:none}.nplan[data-off~="accent"] [data-l="accent"]{display:none}.nplan[data-off~="decor"] [data-l="decor"]{display:none}.nplan[data-off~="night"] [data-l="night"]{display:none}.nplan[data-off~="outdoor"] [data-l="outdoor"]{display:none}
+.nl-en { font: 500 8px var(--mono); letter-spacing: .14em; fill: #8C877C; }
+.under { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px 36px; padding: 16px 18px 22px; border-top: 1px solid #25282E; }
+.sc-now h3 { font: 600 22px/1.2 var(--display); margin: 0; color: var(--night-ink); }
+.sc-now .when { font: 400 12.5px var(--mono); color: var(--night-muted); margin: 4px 0 10px; }
+.sc-now p { margin: 0; color: #CFC8BB; max-width: 58ch; }
+.levels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 16px; font: 400 12px/1.3 var(--mono); color: var(--night-muted); align-content: start; }
+.levels li { display: grid; grid-template-columns: 1fr 34px; gap: 6px; align-items: center; }
+.levels .bar { grid-column: 1 / -1; height: 3px; background: #25282E; }
+.levels .bar i { display: block; height: 100%; background: #F2B872; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 14px; }
+.lay { appearance: none; background: transparent; border: 1px solid #2C2F35; color: var(--night-muted); font: 400 12px var(--mono); padding: 5px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.lay i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.lay[aria-pressed="false"] { opacity: .4; }
+.lay[aria-pressed="false"] i { background: transparent; box-shadow: inset 0 0 0 1px var(--c); }
+.capt { font-size: 14px; color: var(--muted); margin: 12px 0 0; max-width: 72ch; }
+
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 32px; }
+.principles div { border-top: 1px solid var(--ink); padding-top: 12px; }
+.principles h3 { font: 600 19px/1.3 var(--display); margin: 0 0 6px; text-wrap: balance; }
+.principles p { margin: 0; font-size: 15px; color: var(--muted); }
+
+.day { display: grid; gap: 0; }
+.sky { height: 10px; background: linear-gradient(90deg, #E9B46A 0%, #E39B5C 18%, #B07A86 34%, #3E4F7A 48%, #1D2640 64%, #10131C 86%, #2E3B57 100%); }
+.ticks { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 14px; }
+.ticks div { border-left: 1px solid var(--line); padding: 10px 0 0 10px; min-width: 0; }
+.ticks b { display: block; font: 500 15px var(--mono); font-variant-numeric: tabular-nums; }
+.ticks .sun { display: block; font: 400 11.5px var(--mono); color: var(--amber); margin: 2px 0 6px; }
+.ticks p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+
+.rooms { display: grid; }
+.room { display: grid; grid-template-columns: minmax(170px, 240px) minmax(0, 1fr); gap: 10px 40px; padding: 26px 0; border-top: 1px solid var(--line); }
+.room header { display: grid; gap: 2px; align-content: start; }
+.room h3 { font: 500 24px/1.2 var(--he); margin: 0; }
+.room .en { margin: 0; font: 600 16px/1.4 var(--display); }
+.room .rtext p { margin: 0 0 10px; max-width: 68ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chips li { font: 400 12px var(--mono); color: var(--muted); border: 1px solid var(--line); padding: 2px 8px; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; font: 500 11.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px 10px 8px 0; border-bottom: 1px solid var(--ink); }
+td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.sched td:nth-child(2) { min-width: 210px; }
+.sched td.spec { color: var(--muted); font-size: 13px; min-width: 260px; }
+.why { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--mono); font-size: 13px; }
+.code { display: inline-block; font: 600 12px var(--mono); padding: 2px 6px; background: var(--night); color: var(--c); }
+.sched tr:hover td { background: var(--card); }
+
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px 28px; }
+.sc-card { border-top: 1px solid var(--ink); padding-top: 10px; }
+.sc-card h3 { font: 600 18px/1.3 var(--display); margin: 0; }
+.sc-card h3 span { font: 400 14px var(--he); color: var(--muted); margin-left: 6px; }
+.sc-when { font: 400 12px var(--mono); color: var(--amber); margin: 2px 0 6px; }
+.sc-card p { margin: 0; font-size: 14.5px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+.notes { display: grid; gap: 14px; }
+.notes div { background: var(--card); border: 1px solid var(--line); padding: 14px 16px; }
+.notes h3 { font: 600 16px/1.3 var(--display); margin: 0 0 4px; }
+.notes p { margin: 0; font-size: 14.5px; color: var(--muted); }
+.next { background: var(--card); border: 1px solid var(--line); padding: 24px; display: grid; gap: 10px; }
+.next ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 74ch; }
+@media (max-width: 820px) { .ticks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .sky { display: none; } .under { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .room { grid-template-columns: 1fr; } .wrap { gap: 56px; padding-block: 32px 56px; } }
+@media (prefers-reduced-motion: reduce) { .nplan .g { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Lighting design · The Bay Apartment</p>
+    <h1>Light the walls, keep the bay<span class="he" lang="he" dir="rtl">תכנון תאורה · קומה 13, חיפה</span></h1>
+    <p class="lede">The furniture stays simple, so the light does the work. Almost nothing hangs from the ceiling. The light falls on the walls, the joinery and the paper lamps, all in one warm colour, and at night it hands the room over to the lights of Haifa Bay.</p>
+    <div class="meta"><span>86 fittings · 49 dimmable circuits · 7 scenes</span><span>2700 K, dimming to 1800 K</span><span>CRI 95+</span><span>Designed for 15 October</span></div>
+  </header>
+
+  <section aria-labelledby="h-plan">
+    <div class="sec-head"><p class="eyebrow">Lighting plan</p><h2 id="h-plan">The flat at night, scene by scene</h2><p>Pick a scene to see what it lights. Hover any symbol to see what the fitting is. Use the coloured keys to show or hide each layer.</p></div>
+    <figure class="stage" style="margin:0">
+      <div class="scenes" role="group" aria-label="Lighting scenes"><button type="button" class="scn" id="scn-all" data-s="all" aria-pressed="false"><span>All circuits</span><span class="he" lang="he" dir="rtl">כל המעגלים</span></button><button type="button" class="scn" id="scn-welcome" data-s="welcome" aria-pressed="false"><span>Welcome</span><span class="he" lang="he" dir="rtl">כניסה</span></button><button type="button" class="scn" id="scn-evening" data-s="evening" aria-pressed="true"><span>Evening</span><span class="he" lang="he" dir="rtl">ערב</span></button><button type="button" class="scn" id="scn-cook" data-s="cook" aria-pressed="false"><span>Cooking</span><span class="he" lang="he" dir="rtl">בישול</span></button><button type="button" class="scn" id="scn-view" data-s="view" aria-pressed="false"><span>Bay view</span><span class="he" lang="he" dir="rtl">נוף</span></button><button type="button" class="scn" id="scn-film" data-s="film" aria-pressed="false"><span>Film</span><span class="he" lang="he" dir="rtl">סרט</span></button><button type="button" class="scn" id="scn-bedtime" data-s="bedtime" aria-pressed="false"><span>Bedtime</span><span class="he" lang="he" dir="rtl">שינה</span></button><button type="button" class="scn" id="scn-night" data-s="night" aria-pressed="false"><span>Night path</span><span class="he" lang="he" dir="rtl">לילה</span></button></div>
+      <div class="planbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 983 692" class="nplan" role="img" aria-label="Lighting plan of the apartment at night, showing every fitting and the light it gives in the selected scene">
+<defs>
+<radialGradient id="rg4000"><stop offset="0" stop-color="#FFE9CF" stop-opacity="1"/><stop offset=".35" stop-color="#FFE9CF" stop-opacity=".55"/><stop offset="1" stop-color="#FFE9CF" stop-opacity="0"/></radialGradient>
+<radialGradient id="rg2700"><stop offset="0" stop-color="#FFC27E" stop-opacity="1"/><stop offset=".35" stop-color="#FFC27E" stop-opacity=".55"/><stop offset="1" stop-color="#FFC27E" stop-opacity="0"/></radialGradient>
+<radialGradient id="rg2200"><stop offset="0" stop-color="#FFAD5E" stop-opacity="1"/><stop offset=".35" stop-color="#FFAD5E" stop-opacity=".55"/><stop offset="1" stop-color="#FFAD5E" stop-opacity="0"/></radialGradient>
+<radialGradient id="rg1800"><stop offset="0" stop-color="#FF9440" stop-opacity="1"/><stop offset=".35" stop-color="#FF9440" stop-opacity=".55"/><stop offset="1" stop-color="#FF9440" stop-opacity="0"/></radialGradient>
+<filter id="blurL" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6.8"/></filter>
+<filter id="blurS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.1"/></filter>
+</defs>
+<rect width="983" height="692" fill="#0F1114"/>
+<rect x="602.7" y="218.4" width="222.6" height="173.2" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="602.7" y="391.6" width="88.9" height="97.2" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="691.6" y="391.6" width="133.6" height="81.6" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="536.6" y="488.8" width="200.7" height="190.3" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="530.9" y="452.4" width="71.8" height="36.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="190.8" y="391.6" width="411.8" height="60.8" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="472.2" y="457.6" width="58.8" height="88.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="324.0" y="456.6" width="143.0" height="89.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="240.8" y="456.6" width="77.0" height="89.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="16.1" y="470.6" width="217.9" height="91.0" rx="0.0" fill="#15171B" stroke="none" stroke-width="0" />
+<rect x="39.5" y="282.4" width="146.1" height="171.1" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="190.8" y="203.8" width="82.2" height="187.7" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="204.4" y="203.8" width="68.6" height="78.5" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="39.5" y="111.3" width="164.8" height="165.9" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="209.6" y="111.3" width="97.8" height="82.2" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="286.0" y="214.2" width="151.8" height="164.8" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="450.3" y="218.4" width="147.2" height="168.5" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="331.2" y="24.4" width="495.6" height="170.6" rx="0.0" fill="#15171B" stroke="none" stroke-width="0" />
+<rect x="754.0" y="486.2" width="208.0" height="166.4" rx="0.0" fill="#15171B" stroke="none" stroke-width="0" />
+<g class="glows" style="mix-blend-mode:screen">
+<circle class="g" data-l="task" data-c="ENT_D" data-s="0.85" cx="793.0" cy="447.2" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="task" data-c="ENT_NICHE" data-s="0.9" x1="713.4" y1="466.4" x2="742.6" y2="466.4" stroke="#FFC27E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.58"/>
+<line class="g" data-l="task" data-c="ENT_NICHE" data-s="0.9" x1="713.4" y1="466.4" x2="742.6" y2="466.4" stroke="#FFC27E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.58"/>
+<line class="g" data-l="night" data-c="ENT_NICHE" data-s="0.9" x1="694.2" y1="443.6" x2="761.8" y2="443.6" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.58"/>
+<line class="g" data-l="night" data-c="ENT_NICHE" data-s="0.9" x1="694.2" y1="443.6" x2="761.8" y2="443.6" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.58"/>
+<line class="g" data-l="wall" data-c="ENT_SCREEN" data-s="0.9" x1="787.3" y1="380.6" x2="824.2" y2="380.6" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.544"/>
+<line class="g" data-l="wall" data-c="ENT_SCREEN" data-s="0.9" x1="787.3" y1="380.6" x2="824.2" y2="380.6" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0.544"/>
+<line class="g" data-l="wall" data-c="WALL_E" data-s="0.9" x1="805.0" y1="468.0" x2="805.0" y2="387.4" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.648"/>
+<line class="g" data-l="wall" data-c="WALL_E" data-s="0.9" x1="805.0" y1="468.0" x2="805.0" y2="387.4" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0.648"/>
+<line class="g" data-l="wall" data-c="WALL_E" data-s="0.9" x1="805.0" y1="379.1" x2="805.0" y2="227.2" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.648"/>
+<line class="g" data-l="wall" data-c="WALL_E" data-s="0.9" x1="805.0" y1="379.1" x2="805.0" y2="227.2" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0.648"/>
+<line class="g" data-l="wall" data-c="WALL_MEDIA" data-s="0.9" x1="623.5" y1="356.2" x2="623.5" y2="241.8" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.58"/>
+<line class="g" data-l="wall" data-c="WALL_MEDIA" data-s="0.9" x1="623.5" y1="356.2" x2="623.5" y2="241.8" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0.58"/>
+<line class="g" data-l="wall" data-c="LIV_CURT" data-s="0.85" x1="642.2" y1="241.8" x2="824.2" y2="241.8" stroke="#FFC27E" stroke-width="39.0" stroke-linecap="round" filter="url(#blurL)" opacity="0.477"/>
+<line class="g" data-l="wall" data-c="LIV_CURT" data-s="0.85" x1="642.2" y1="241.8" x2="824.2" y2="241.8" stroke="#FFC27E" stroke-width="12.5" stroke-linecap="round" filter="url(#blurS)" opacity="0.477"/>
+<circle class="g" data-l="decor" data-c="LIV_PEND" data-s="0.9" cx="729.0" cy="306.8" r="93.6" fill="url(#rg2200)" opacity="0.505"/>
+<circle class="g" data-l="decor" data-c="LIV_COL" data-s="1.0" cx="634.4" cy="239.2" r="75.4" fill="url(#rg2200)" opacity="0.755"/>
+<circle class="g" data-l="decor" data-c="LIV_LANT" data-s="0.9" cx="809.6" cy="371.8" r="59.8" fill="url(#rg2200)" opacity="0.648"/>
+<circle class="g" data-l="accent" data-c="LIV_ART" data-s="1.0" cx="812.8" cy="322.4" r="19.8" fill="url(#rg2700)" opacity="0.822"/>
+<circle class="g" data-l="accent" data-c="LIV_ART" data-s="1.0" cx="812.8" cy="291.2" r="19.8" fill="url(#rg2700)" opacity="0.822"/>
+<line class="g" data-l="accent" data-c="LIV_TV" data-s="0.8" x1="618.3" y1="325.0" x2="618.3" y2="273.0" stroke="#FFC27E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="accent" data-c="LIV_TV" data-s="0.8" x1="618.3" y1="325.0" x2="618.3" y2="273.0" stroke="#FFC27E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="night" data-c="LIV_CONSOLE" data-s="0.9" x1="632.8" y1="357.8" x2="632.8" y2="240.2" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="LIV_CONSOLE" data-s="0.9" x1="632.8" y1="357.8" x2="632.8" y2="240.2" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.464"/>
+<circle class="g" data-l="task" data-c="KIT_D" data-s="0.85" cx="566.8" cy="642.2" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="KIT_D" data-s="0.85" cx="598.0" cy="642.2" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="KIT_D" data-s="0.85" cx="629.2" cy="642.2" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="KIT_D" data-s="0.85" cx="660.4" cy="642.2" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="KIT_D" data-s="0.85" cx="702.0" cy="611.0" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="KIT_D" data-s="0.85" cx="702.0" cy="559.0" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="task" data-c="KIT_SHELF" data-s="0.9" x1="557.4" y1="659.4" x2="677.6" y2="659.4" stroke="#FFC27E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.615"/>
+<line class="g" data-l="task" data-c="KIT_SHELF" data-s="0.9" x1="557.4" y1="659.4" x2="677.6" y2="659.4" stroke="#FFC27E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.615"/>
+<circle class="g" data-l="decor" data-c="KIT_PEND" data-s="0.85" cx="574.6" cy="551.2" r="49.4" fill="url(#rg2200)" opacity="0.514"/>
+<circle class="g" data-l="decor" data-c="KIT_PEND" data-s="0.85" cx="621.4" cy="551.2" r="49.4" fill="url(#rg2200)" opacity="0.514"/>
+<line class="g" data-l="night" data-c="KIT_PLINTH" data-s="0.9" x1="537.7" y1="638.6" x2="704.6" y2="638.6" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="KIT_PLINTH" data-s="0.9" x1="537.7" y1="638.6" x2="704.6" y2="638.6" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="KIT_PLINTH" data-s="0.9" x1="697.3" y1="645.8" x2="697.3" y2="532.0" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="KIT_PLINTH" data-s="0.9" x1="697.3" y1="645.8" x2="697.3" y2="532.0" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="KIT_PLINTH" data-s="0.9" x1="537.7" y1="519.0" x2="650.0" y2="519.0" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="KIT_PLINTH" data-s="0.9" x1="537.7" y1="519.0" x2="650.0" y2="519.0" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.464"/>
+<circle class="g" data-l="task" data-c="KIT_PLINTH" data-s="0.6" cx="721.8" cy="509.6" r="18.2" fill="url(#rg2200)" opacity="0.309"/>
+<circle class="g" data-l="task" data-c="COR_D" data-s="0.85" cx="647.4" cy="439.4" r="39.0" fill="url(#rg2700)" opacity="0.299"/>
+<circle class="g" data-l="task" data-c="COR_D" data-s="0.85" cx="488.8" cy="422.2" r="39.0" fill="url(#rg2700)" opacity="0.299"/>
+<circle class="g" data-l="task" data-c="COR_D" data-s="0.85" cx="397.8" cy="422.2" r="39.0" fill="url(#rg2700)" opacity="0.299"/>
+<circle class="g" data-l="task" data-c="COR_D" data-s="0.85" cx="293.8" cy="422.2" r="39.0" fill="url(#rg2700)" opacity="0.299"/>
+<circle class="g" data-l="task" data-c="COR_D" data-s="0.85" cx="215.8" cy="422.2" r="39.0" fill="url(#rg2700)" opacity="0.299"/>
+<circle class="g" data-l="night" data-c="NIGHT" data-s="0.8" cx="561.6" cy="433.7" r="26.0" fill="url(#rg2200)" opacity="0"/>
+<circle class="g" data-l="night" data-c="NIGHT" data-s="0.8" cx="442.0" cy="433.7" r="26.0" fill="url(#rg2200)" opacity="0"/>
+<circle class="g" data-l="night" data-c="NIGHT" data-s="0.8" cx="345.8" cy="433.7" r="26.0" fill="url(#rg2200)" opacity="0"/>
+<circle class="g" data-l="night" data-c="NIGHT" data-s="0.8" cx="249.6" cy="433.7" r="26.0" fill="url(#rg2200)" opacity="0"/>
+<line class="g" data-l="task" data-c="WC_MIRROR" data-s="0.9" x1="520.0" y1="507.0" x2="520.0" y2="484.1" stroke="#FFC27E" stroke-width="26.0" stroke-linecap="round" filter="url(#blurL)" opacity="0.544"/>
+<line class="g" data-l="task" data-c="WC_MIRROR" data-s="0.9" x1="520.0" y1="507.0" x2="520.0" y2="484.1" stroke="#FFC27E" stroke-width="8.3" stroke-linecap="round" filter="url(#blurS)" opacity="0.544"/>
+<circle class="g" data-l="accent" data-c="WC_PIN" data-s="1.0" cx="519.0" cy="495.6" r="19.8" fill="url(#rg2700)" opacity="0.604"/>
+<circle class="g" data-l="task" data-c="BATH_D" data-s="0.85" cx="342.2" cy="501.8" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="BATH_D" data-s="0.85" cx="405.6" cy="485.2" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="task" data-c="BATH_MIRROR" data-s="0.9" x1="377.0" y1="533.5" x2="416.0" y2="533.5" stroke="#FFC27E" stroke-width="26.0" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="BATH_MIRROR" data-s="0.9" x1="377.0" y1="533.5" x2="416.0" y2="533.5" stroke="#FFC27E" stroke-width="8.3" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="task" data-c="BATH_NICHE" data-s="0.9" x1="337.5" y1="535.6" x2="337.5" y2="468.0" stroke="#FFAD5E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="BATH_NICHE" data-s="0.9" x1="337.5" y1="535.6" x2="337.5" y2="468.0" stroke="#FFAD5E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="task" data-c="LAUN_D" data-s="0.85" cx="279.2" cy="494.0" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="wall" data-c="PASS_GRAZE" data-s="0.9" x1="255.3" y1="382.2" x2="255.3" y2="208.0" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.464"/>
+<line class="g" data-l="wall" data-c="PASS_GRAZE" data-s="0.9" x1="255.3" y1="382.2" x2="255.3" y2="208.0" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0.464"/>
+<line class="g" data-l="night" data-c="NIGHT" data-s="0.9" x1="233.5" y1="383.2" x2="233.5" y2="206.4" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="night" data-c="NIGHT" data-s="0.9" x1="233.5" y1="383.2" x2="233.5" y2="206.4" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="night" data-c="NIGHT" data-s="0.8" cx="208.0" cy="335.4" r="26.0" fill="url(#rg2200)" opacity="0"/>
+<circle class="g" data-l="night" data-c="NIGHT" data-s="0.8" cx="221.5" cy="241.8" r="26.0" fill="url(#rg2200)" opacity="0"/>
+<circle class="g" data-l="task" data-c="PASS_GRAZE" data-s="0.6" cx="257.4" cy="293.8" r="18.2" fill="url(#rg2700)" opacity="0.309"/>
+<line class="g" data-l="wall" data-c="MST_CURT" data-s="0.85" x1="85.8" y1="130.5" x2="163.8" y2="130.5" stroke="#FFC27E" stroke-width="39.0" stroke-linecap="round" filter="url(#blurL)" opacity="0.438"/>
+<line class="g" data-l="wall" data-c="MST_CURT" data-s="0.85" x1="85.8" y1="130.5" x2="163.8" y2="130.5" stroke="#FFC27E" stroke-width="12.5" stroke-linecap="round" filter="url(#blurS)" opacity="0.438"/>
+<line class="g" data-l="wall" data-c="MST_CURT" data-s="0.85" x1="58.8" y1="228.3" x2="58.8" y2="149.8" stroke="#FFC27E" stroke-width="39.0" stroke-linecap="round" filter="url(#blurL)" opacity="0.438"/>
+<line class="g" data-l="wall" data-c="MST_CURT" data-s="0.85" x1="58.8" y1="228.3" x2="58.8" y2="149.8" stroke="#FFC27E" stroke-width="12.5" stroke-linecap="round" filter="url(#blurS)" opacity="0.438"/>
+<circle class="g" data-l="task" data-c="MST_READ" data-s="0.9" cx="70.2" cy="132.6" r="28.6" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="MST_READ" data-s="0.9" cx="179.4" cy="132.6" r="28.6" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="decor" data-c="MST_LAMPS" data-s="0.9" cx="66.6" cy="124.3" r="39.0" fill="url(#rg2200)" opacity="0.544"/>
+<circle class="g" data-l="decor" data-c="MST_LAMPS" data-s="0.9" cx="183.6" cy="124.3" r="39.0" fill="url(#rg2200)" opacity="0.544"/>
+<line class="g" data-l="wall" data-c="MST_ART" data-s="0.9" x1="44.2" y1="256.9" x2="158.6" y2="256.9" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="wall" data-c="MST_ART" data-s="0.9" x1="44.2" y1="256.9" x2="158.6" y2="256.9" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="accent" data-c="MST_ART" data-s="1.0" cx="98.8" cy="262.6" r="19.8" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="night" data-c="MST_NIGHT" data-s="0.9" x1="74.4" y1="213.2" x2="74.4" y2="137.8" stroke="#FF9440" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="night" data-c="MST_NIGHT" data-s="0.9" x1="74.4" y1="213.2" x2="74.4" y2="137.8" stroke="#FF9440" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="night" data-c="MST_NIGHT" data-s="0.9" x1="175.2" y1="213.2" x2="175.2" y2="137.8" stroke="#FF9440" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="night" data-c="MST_NIGHT" data-s="0.9" x1="175.2" y1="213.2" x2="175.2" y2="137.8" stroke="#FF9440" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="task" data-c="ENS_D" data-s="0.85" cx="283.4" cy="133.6" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<circle class="g" data-l="task" data-c="ENS_D" data-s="0.85" cx="241.8" cy="169.0" r="39.0" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="task" data-c="ENS_MIRROR" data-s="0.9" x1="296.4" y1="188.8" x2="296.4" y2="159.6" stroke="#FFC27E" stroke-width="26.0" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="ENS_MIRROR" data-s="0.9" x1="296.4" y1="188.8" x2="296.4" y2="159.6" stroke="#FFC27E" stroke-width="8.3" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="task" data-c="ENS_NICHE" data-s="0.9" x1="262.6" y1="124.8" x2="301.6" y2="124.8" stroke="#FFAD5E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="ENS_NICHE" data-s="0.9" x1="262.6" y1="124.8" x2="301.6" y2="124.8" stroke="#FFAD5E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="task" data-c="B3_DESK" data-s="0.9" x1="470.6" y1="237.6" x2="533.0" y2="237.6" stroke="#FFE9CF" stroke-width="67.6" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="B3_DESK" data-s="0.9" x1="470.6" y1="237.6" x2="533.0" y2="237.6" stroke="#FFE9CF" stroke-width="21.6" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="wall" data-c="B3_GRAZE" data-s="0.9" x1="517.9" y1="335.4" x2="593.8" y2="335.4" stroke="#FFC27E" stroke-width="44.2" stroke-linecap="round" filter="url(#blurL)" opacity="0.371"/>
+<line class="g" data-l="wall" data-c="B3_GRAZE" data-s="0.9" x1="517.9" y1="335.4" x2="593.8" y2="335.4" stroke="#FFC27E" stroke-width="14.1" stroke-linecap="round" filter="url(#blurS)" opacity="0.371"/>
+<line class="g" data-l="accent" data-c="B3_TV" data-s="0.8" x1="467.0" y1="325.0" x2="467.0" y2="273.0" stroke="#FFC27E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="accent" data-c="B3_TV" data-s="0.8" x1="467.0" y1="325.0" x2="467.0" y2="273.0" stroke="#FFC27E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="wall" data-c="B3_CURT" data-s="0.85" x1="483.6" y1="237.1" x2="556.4" y2="237.1" stroke="#FFC27E" stroke-width="39.0" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="wall" data-c="B3_CURT" data-s="0.85" x1="483.6" y1="237.1" x2="556.4" y2="237.1" stroke="#FFC27E" stroke-width="12.5" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="task" data-c="MAM_TRACK" data-s="0.8" x1="317.2" y1="299.0" x2="416.0" y2="299.0" stroke="#FFC27E" stroke-width="78.0" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="MAM_TRACK" data-s="0.8" x1="317.2" y1="299.0" x2="416.0" y2="299.0" stroke="#FFC27E" stroke-width="25.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="task" data-c="MAM_MIRROR" data-s="0.9" x1="426.4" y1="299.0" x2="426.4" y2="247.0" stroke="#FFC27E" stroke-width="26.0" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="MAM_MIRROR" data-s="0.9" x1="426.4" y1="299.0" x2="426.4" y2="247.0" stroke="#FFC27E" stroke-width="8.3" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="decor" data-c="MAM_LAMP" data-s="0.9" cx="370.8" cy="228.8" r="39.0" fill="url(#rg2200)" opacity="0"/>
+<circle class="g" data-l="task" data-c="MAM_LAMP" data-s="0.9" cx="293.8" cy="236.6" r="28.6" fill="url(#rg2200)" opacity="0"/>
+<line class="g" data-l="night" data-c="MAM_COLOR" data-s="0.9" x1="288.6" y1="226.7" x2="356.2" y2="226.7" stroke="#FFAD5E" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="night" data-c="MAM_COLOR" data-s="0.9" x1="288.6" y1="226.7" x2="356.2" y2="226.7" stroke="#FFAD5E" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="decor" data-c="B4_DISC" data-s="0.8" cx="104.0" cy="371.8" r="88.4" fill="url(#rg2700)" opacity="0"/>
+<line class="g" data-l="wall" data-c="B4_CURT" data-s="0.85" x1="58.8" y1="412.4" x2="58.8" y2="345.8" stroke="#FFC27E" stroke-width="39.0" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="wall" data-c="B4_CURT" data-s="0.85" x1="58.8" y1="412.4" x2="58.8" y2="345.8" stroke="#FFC27E" stroke-width="12.5" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="task" data-c="B4_BOOK" data-s="0.9" x1="59.8" y1="297.4" x2="109.2" y2="297.4" stroke="#FFAD5E" stroke-width="31.2" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="task" data-c="B4_BOOK" data-s="0.9" x1="59.8" y1="297.4" x2="109.2" y2="297.4" stroke="#FFAD5E" stroke-width="10.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<line class="g" data-l="night" data-c="B4_NIGHT" data-s="0.9" x1="157.6" y1="383.8" x2="157.6" y2="302.6" stroke="#FF9440" stroke-width="21.8" stroke-linecap="round" filter="url(#blurL)" opacity="0"/>
+<line class="g" data-l="night" data-c="B4_NIGHT" data-s="0.9" x1="157.6" y1="383.8" x2="157.6" y2="302.6" stroke="#FF9440" stroke-width="7.0" stroke-linecap="round" filter="url(#blurS)" opacity="0"/>
+<circle class="g" data-l="outdoor" data-c="BAL_TREE" data-s="0.9" cx="345.8" cy="48.4" r="44.2" fill="url(#rg2200)" opacity="0.615"/>
+<circle class="g" data-l="outdoor" data-c="BAL_TREE" data-s="0.9" cx="366.6" cy="48.4" r="44.2" fill="url(#rg2200)" opacity="0.615"/>
+<circle class="g" data-l="outdoor" data-c="BAL_TREE" data-s="0.9" cx="813.3" cy="127.4" r="44.2" fill="url(#rg2200)" opacity="0.615"/>
+<circle class="g" data-l="outdoor" data-c="BAL_TREE" data-s="0.9" cx="813.3" cy="65.0" r="44.2" fill="url(#rg2200)" opacity="0.615"/>
+<line class="g" data-l="outdoor" data-c="BAL_GLOW" data-s="0.9" x1="489.8" y1="135.7" x2="607.4" y2="135.7" stroke="#FFAD5E" stroke-width="26.0" stroke-linecap="round" filter="url(#blurL)" opacity="0.544"/>
+<line class="g" data-l="outdoor" data-c="BAL_GLOW" data-s="0.9" x1="489.8" y1="135.7" x2="607.4" y2="135.7" stroke="#FFAD5E" stroke-width="8.3" stroke-linecap="round" filter="url(#blurS)" opacity="0.544"/>
+<line class="g" data-l="outdoor" data-c="BAL_GLOW" data-s="0.9" x1="789.9" y1="157.6" x2="789.9" y2="29.6" stroke="#FFAD5E" stroke-width="26.0" stroke-linecap="round" filter="url(#blurL)" opacity="0.544"/>
+<line class="g" data-l="outdoor" data-c="BAL_GLOW" data-s="0.9" x1="789.9" y1="157.6" x2="789.9" y2="29.6" stroke="#FFAD5E" stroke-width="8.3" stroke-linecap="round" filter="url(#blurS)" opacity="0.544"/>
+<line class="g" data-l="outdoor" data-c="BAL_WALL" data-s="0.8" x1="553.8" y1="176.3" x2="647.4" y2="176.3" stroke="#FFC27E" stroke-width="46.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.373"/>
+<line class="g" data-l="outdoor" data-c="BAL_WALL" data-s="0.8" x1="553.8" y1="176.3" x2="647.4" y2="176.3" stroke="#FFC27E" stroke-width="15.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.373"/>
+<line class="g" data-l="outdoor" data-c="BAL_WALL" data-s="0.8" x1="409.8" y1="176.3" x2="485.7" y2="176.3" stroke="#FFC27E" stroke-width="46.8" stroke-linecap="round" filter="url(#blurL)" opacity="0.373"/>
+<line class="g" data-l="outdoor" data-c="BAL_WALL" data-s="0.8" x1="409.8" y1="176.3" x2="485.7" y2="176.3" stroke="#FFC27E" stroke-width="15.0" stroke-linecap="round" filter="url(#blurS)" opacity="0.373"/>
+<circle class="g" data-l="outdoor" data-c="BAL_TABLE" data-s="0.85" cx="390.0" cy="117.0" r="39.0" fill="url(#rg2200)" opacity="0.642"/>
+<circle class="g" data-l="outdoor" data-c="BAL_TABLE" data-s="0.85" cx="431.6" cy="117.0" r="39.0" fill="url(#rg2200)" opacity="0.642"/>
+</g>
+<g fill="none" stroke="#454850" stroke-width="0.8">
+<rect x="772.2" y="439.4" width="41.6" height="31.2" stroke-dasharray="2 3"/>
+<rect x="694.2" y="452.4" width="67.6" height="20.8" rx="2"/>
+<rect x="786.2" y="382.2" width="39.0" height="3.1" rx="2"/>
+<rect x="657.8" y="234.0" width="132.6" height="143.0" stroke-dasharray="2 3"/>
+<rect x="775.8" y="247.0" width="47.8" height="119.6" rx="2"/>
+<rect x="669.8" y="358.8" width="39.0" height="39.0" rx="2"/>
+<rect x="721.8" y="358.8" width="39.0" height="39.0" rx="2"/>
+<circle cx="729.0" cy="306.8" r="26.0"/>
+<circle cx="799.8" cy="232.4" r="11.4"/>
+<rect x="602.7" y="239.2" width="21.8" height="119.6" rx="2"/>
+<rect x="602.7" y="247.0" width="2.1" height="104.0" rx="2"/>
+<circle cx="634.4" cy="239.2" r="12.0"/>
+<circle cx="809.6" cy="371.8" r="9.4"/>
+<rect x="642.2" y="221.0" width="182.0" height="4.2" rx="2"/>
+<rect x="823.7" y="275.6" width="1.6" height="62.4" rx="2"/>
+<rect x="536.6" y="647.4" width="169.5" height="31.7" rx="2"/>
+<rect x="706.2" y="530.9" width="31.2" height="148.2" rx="2"/>
+<rect x="706.2" y="488.8" width="31.2" height="42.1" rx="2"/>
+<rect x="556.4" y="665.1" width="122.2" height="14.0" rx="2"/>
+<rect x="582.4" y="650.0" width="31.2" height="25.0" rx="2"/>
+<rect x="644.8" y="651.6" width="31.2" height="21.8" rx="2"/>
+<rect x="536.6" y="527.8" width="114.4" height="46.8" rx="2"/>
+<circle cx="564.2" cy="511.2" r="10.4"/>
+<circle cx="598.0" cy="511.2" r="10.4"/>
+<circle cx="631.8" cy="511.2" r="10.4"/>
+<rect x="511.7" y="480.0" width="19.2" height="31.2" rx="2"/>
+<rect x="485.7" y="516.4" width="19.8" height="28.6" rx="2"/>
+<rect x="325.0" y="458.6" width="33.8" height="86.3" rx="2"/>
+<rect x="376.0" y="518.4" width="41.1" height="26.5" rx="2"/>
+<rect x="427.4" y="516.4" width="17.7" height="28.6" rx="2"/>
+<rect x="242.3" y="513.8" width="63.4" height="31.2" rx="2"/>
+<rect x="259.0" y="112.3" width="48.4" height="42.6" rx="2"/>
+<rect x="281.8" y="156.0" width="25.5" height="36.4" rx="2"/>
+<rect x="219.4" y="112.3" width="18.7" height="22.9" rx="2"/>
+<rect x="452.4" y="218.4" width="96.2" height="36.4" rx="2"/>
+<circle cx="499.2" cy="278.2" r="15.6"/>
+<rect x="450.3" y="260.0" width="21.8" height="78.0" rx="2"/>
+<rect x="450.3" y="267.8" width="3.1" height="62.4" rx="2"/>
+<rect x="553.8" y="234.0" width="43.7" height="114.4" rx="2"/>
+<rect x="483.6" y="267.8" width="65.0" height="70.2" stroke-dasharray="2 3"/>
+<rect x="514.3" y="355.7" width="83.2" height="31.2" rx="2"/>
+<rect x="286.0" y="216.8" width="72.8" height="105.6" rx="2"/>
+<rect x="361.4" y="218.4" width="18.2" height="20.8" rx="2"/>
+<rect x="400.4" y="216.8" width="32.2" height="108.2" rx="2"/>
+<circle cx="382.2" cy="283.4" r="12.5"/>
+<rect x="286.0" y="347.9" width="83.2" height="31.2" rx="2"/>
+<rect x="41.6" y="283.4" width="99.8" height="45.8" rx="2"/>
+<circle cx="96.2" cy="379.6" r="41.6" stroke-dasharray="2 3"/>
+<rect x="166.4" y="301.6" width="18.2" height="83.2" rx="2"/>
+<circle cx="143.0" cy="338.0" r="15.6"/>
+<circle cx="143.0" cy="362.4" r="7.8"/>
+<circle cx="163.8" cy="319.8" r="7.8"/>
+<rect x="59.8" y="282.4" width="49.4" height="2.1" rx="2"/>
+<rect x="39.5" y="422.2" width="83.2" height="31.2" rx="2"/>
+<rect x="83.2" y="111.3" width="83.2" height="104.5" rx="2"/>
+<rect x="54.6" y="112.8" width="23.4" height="22.4" rx="2"/>
+<rect x="171.6" y="112.8" width="23.4" height="22.4" rx="2"/>
+<rect x="41.6" y="257.4" width="114.4" height="19.8" rx="2"/>
+<rect x="197.6" y="221.0" width="39.0" height="150.8" stroke-dasharray="2 3"/>
+<rect x="72.8" y="218.4" width="104.0" height="31.2" stroke-dasharray="2 3"/>
+<rect x="242.3" y="203.8" width="30.7" height="181.0" rx="2"/>
+<rect x="488.8" y="147.2" width="119.6" height="42.6" rx="2"/>
+<rect x="517.4" y="101.4" width="62.4" height="28.6" rx="2"/>
+<rect x="358.8" y="93.6" width="93.6" height="46.8" rx="2"/>
+<circle cx="374.4" cy="156.0" r="11.4"/>
+<circle cx="374.4" cy="78.0" r="11.4"/>
+<circle cx="405.6" cy="156.0" r="11.4"/>
+<circle cx="405.6" cy="78.0" r="11.4"/>
+<circle cx="436.8" cy="156.0" r="11.4"/>
+<circle cx="436.8" cy="78.0" r="11.4"/>
+<rect x="800.8" y="28.6" width="25.0" height="130.0" rx="2"/>
+<rect x="332.8" y="25.5" width="46.8" height="29.1" rx="2"/>
+<circle cx="356.2" cy="40.0" r="20.8"/>
+</g>
+<path d="M435.8,675.5 L435.8,695.2 L512.2,695.2 L512.2,675.5 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M212.7,675.5 L433.2,676.0 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M452.4,554.8 L452.4,568.4 L477.9,568.4 L477.9,554.8 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M529.4,541.3 L525.2,540.8 L522.1,541.3 L521.6,542.4 L517.4,542.4 L516.9,554.3 L506.5,554.8 L506.5,568.4 L513.8,568.4 L514.8,569.4 L514.8,577.7 L528.3,577.7 L528.3,554.8 L517.4,554.3 L517.4,543.4 L529.4,542.9 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M767.0,473.7 L727.0,473.7 L727.0,481.0 L703.6,481.0 L703.0,476.8 L693.2,476.8 L693.2,484.6 L737.9,484.6 L740.0,485.7 L739.4,681.2 L737.4,680.7 L737.4,487.2 L737.4,534.6 L724.9,535.1 L724.9,537.2 L737.4,537.7 L736.8,679.1 L537.2,679.1 L537.2,680.7 L535.1,681.2 L534.6,678.6 L536.1,678.1 L536.1,642.7 L532.0,642.7 L532.0,680.2 L528.8,680.7 L528.3,642.7 L514.8,642.7 L514.8,695.2 L573.0,695.2 L573.6,696.8 L581.9,696.8 L582.4,695.2 L742.0,695.2 L742.6,696.8 L754.0,696.8 L754.0,498.7 L755.0,491.4 L767.0,491.4 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M515.8,451.9 L514.8,452.4 L515.3,456.0 L530.9,456.0 L532.0,457.1 L532.0,577.7 L536.1,577.7 L536.1,451.9 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M421.7,452.4 L421.7,456.0 L467.0,456.6 L467.0,546.0 L472.2,546.0 L472.2,456.6 L476.3,456.0 L476.8,451.9 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M423.8,547.0 L324.5,547.6 L324.0,456.6 L377.5,456.0 L378.0,451.9 L317.7,451.9 L314.6,452.4 L315.1,456.0 L317.7,456.6 L318.2,547.6 L241.3,547.6 L240.8,542.4 L234.0,542.4 L233.5,546.5 L220.0,546.5 L220.0,557.4 L217.9,559.0 L16.1,558.5 L16.6,568.9 L423.8,568.4 L423.8,554.8 L233.5,554.3 L240.8,553.8 L241.3,551.2 L423.8,551.2 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M18.2,411.8 L18.2,473.2 L218.9,473.2 L220.0,474.2 L220.0,476.3 L240.8,476.8 L241.3,456.0 L270.9,456.0 L271.4,451.9 L191.4,452.4 L190.8,448.8 L185.6,448.8 L185.1,451.9 L39.5,452.4 L39.5,411.8 L35.4,411.8 L35.4,456.0 L233.5,456.0 L234.0,459.2 L32.2,459.7 L31.7,411.8 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M185.6,387.4 L185.6,407.2 L190.8,407.2 L190.8,387.4 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M237.6,387.4 L238.2,391.0 L272.0,391.0 L272.0,387.4 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M35.4,226.7 L35.4,346.8 L39.0,346.8 L39.0,282.9 L40.0,281.8 L185.1,281.8 L186.2,282.9 L186.2,382.2 L190.3,382.2 L189.8,278.2 L39.5,278.2 L39.5,226.7 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M18.2,226.7 L18.2,346.8 L31.7,346.8 L31.7,226.7 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M602.2,219.4 L598.5,219.4 L598.5,386.9 L499.7,386.9 L500.2,391.0 L602.2,391.6 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M552.2,212.7 L552.2,216.8 L649.0,216.8 L649.0,212.7 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M450.8,212.7 L450.8,216.8 L487.2,216.8 L487.2,212.7 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M429.5,197.6 L432.1,198.1 L431.6,201.8 L407.7,201.8 L407.2,209.0 L407.7,213.2 L437.8,212.7 L438.9,213.7 L438.9,380.1 L437.8,381.7 L432.1,381.7 L431.1,383.8 L431.1,389.0 L432.1,391.0 L448.2,391.0 L448.2,197.1 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M274.6,203.3 L274.6,391.0 L385.8,391.0 L386.9,389.0 L386.9,383.8 L385.8,381.7 L285.5,381.7 L283.9,380.1 L283.9,213.7 L285.5,212.7 L353.1,213.2 L353.6,208.5 L353.1,201.8 L329.2,201.8 L328.6,198.1 L331.8,197.6 L310.4,197.1 L310.4,201.8 L309.4,203.3 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M552.2,195.5 L552.2,209.0 L649.0,209.0 L649.0,195.5 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M450.8,195.5 L450.8,209.0 L487.2,209.0 L487.2,195.5 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M205.4,196.0 L205.4,203.8 L272.0,203.8 L272.0,199.7 L210.1,199.7 L209.6,195.5 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M35.4,151.3 L39.5,151.3 L40.0,111.8 L58.8,111.8 L59.3,110.2 L87.4,110.2 L87.4,107.6 L35.4,107.6 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M256.9,106.1 L256.9,110.2 L307.3,110.2 L308.4,111.3 L308.4,194.5 L312.5,194.5 L312.5,106.1 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M162.8,88.9 L162.8,102.4 L203.3,102.4 L203.8,104.0 L205.4,104.5 L204.9,106.1 L162.8,106.1 L162.8,110.2 L203.3,110.2 L203.8,111.8 L205.4,112.3 L205.4,157.0 L209.6,157.6 L209.6,103.0 L228.3,102.4 L228.3,88.9 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M16.6,151.8 L31.7,151.3 L32.2,104.0 L87.4,104.0 L87.4,88.9 L16.6,89.4 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M841.4,23.4 L826.8,23.9 L826.8,194.5 L828.4,195.0 L828.4,196.6 L826.3,197.1 L825.8,195.5 L807.6,195.5 L807.6,209.0 L828.4,209.6 L828.4,489.8 L840.3,489.8 L840.3,475.8 L838.8,475.3 L838.8,217.9 L840.3,217.4 L840.3,195.0 L841.4,194.5 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<path d="M318.2,10.9 L318.8,88.4 L256.9,88.9 L256.9,102.4 L315.1,102.4 L316.2,103.5 L316.2,194.5 L329.7,194.5 L329.7,12.0 L330.7,10.9 Z " fill="#C4BCAE" fill-rule="evenodd"/>
+<rect x="737.4" y="652.6" width="237.6" height="13.0" rx="0.0" fill="#C4BCAE" stroke="none" stroke-width="0" />
+<rect x="962.0" y="473.2" width="13.0" height="192.4" rx="0.0" fill="#C4BCAE" stroke="none" stroke-width="0" />
+<rect x="840.8" y="473.2" width="134.2" height="13.0" rx="0.0" fill="#C4BCAE" stroke="none" stroke-width="0" />
+<rect x="16.1" y="152.4" width="23.4" height="73.3" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="27.8" y1="225.7" x2="27.8" y2="152.4" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="16.1" y="347.9" width="23.4" height="62.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="27.8" y1="410.3" x2="27.8" y2="347.9" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="88.4" y="87.9" width="72.8" height="23.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="88.4" y1="99.6" x2="161.2" y2="99.6" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="229.3" y="87.9" width="26.5" height="23.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="229.3" y1="99.6" x2="255.8" y2="99.6" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="353.1" y="195.0" width="54.1" height="19.2" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="353.1" y1="204.6" x2="407.2" y2="204.6" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="488.3" y="195.0" width="62.9" height="23.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="488.3" y1="206.7" x2="551.2" y2="206.7" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="650.5" y="195.0" width="156.5" height="23.4" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="650.5" y1="206.7" x2="807.0" y2="206.7" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="513.2" y="578.8" width="23.4" height="66.0" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="524.9" y1="644.8" x2="524.9" y2="578.8" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="234.0" y="476.8" width="6.8" height="65.5" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<line x1="237.4" y1="542.4" x2="237.4" y2="476.8" stroke="#7FA3B5" stroke-width="1.6"/>
+<rect x="766.5" y="473.2" width="53.0" height="13.0" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="450.3" y="386.9" width="47.8" height="4.7" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="387.9" y="379.1" width="41.1" height="14.0" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="190.8" y="386.4" width="43.7" height="5.2" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="185.6" y="407.2" width="5.2" height="41.6" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="204.4" y="160.2" width="5.2" height="33.3" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="274.6" y="451.9" width="38.5" height="4.7" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="378.6" y="451.9" width="40.0" height="4.7" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<rect x="477.9" y="452.4" width="34.8" height="5.2" rx="0.0" fill="#1A1C21" stroke="none" stroke-width="0" />
+<g class="syms">
+<g class="f" data-t="D1" data-l="task" data-c="ENT_D"><title>D1 · Recessed downlight — Door downlight. Lights the face of whoever is at the door</title>
+<circle cx="793.0" cy="447.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="793.0" cy="447.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="L4" data-l="task" data-c="ENT_NICHE"><title>L4 · Task line — Bench niche + cabinet plinth. Bench niche in the shoe cabinet</title>
+<line x1="713.4" y1="455.0" x2="742.6" y2="455.0" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="ENT_NICHE"><title>L3 · Plinth glow — Bench niche + cabinet plinth. Under the floating shoe cabinet</title>
+<line x1="694.2" y1="450.8" x2="761.8" y2="450.8" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="ENT_SCREEN"><title>L1 · Wall grazer in ceiling slot — Slatted screen graze. Grazes the oak slats; their shadows stripe the floor</title>
+<line x1="787.3" y1="380.6" x2="824.2" y2="380.6" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="WALL_E"><title>L1 · Wall grazer in ceiling slot — Guiding wall: east wall from door to glass. East wall of the entry</title>
+<line x1="821.6" y1="468.0" x2="821.6" y2="387.4" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="WALL_E"><title>L1 · Wall grazer in ceiling slot — Guiding wall: east wall from door to glass. East wall behind the sofa, ends at the glass</title>
+<line x1="821.6" y1="379.1" x2="821.6" y2="227.2" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="WALL_MEDIA"><title>L1 · Wall grazer in ceiling slot — Clay media wall graze. Clay plaster shows its trowel marks under raking light</title>
+<line x1="606.8" y1="356.2" x2="606.8" y2="241.8" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L2" data-l="wall" data-c="LIV_CURT"><title>L2 · Curtain-pocket wash — Curtain pocket. Sheers glow when drawn; off when open at night</title>
+<line x1="642.2" y1="226.2" x2="824.2" y2="226.2" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="P1" data-l="decor" data-c="LIV_PEND"><title>P1 · Washi pendant Ø80 — Washi pendant</title>
+<circle cx="729.0" cy="306.8" r="8" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="729.0" cy="306.8" r="3.6" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="P3" data-l="decor" data-c="LIV_COL"><title>P3 · Paper column floor lamp — Paper column floor lamp. Replaces the olive tree</title>
+<circle cx="634.4" cy="239.2" r="7" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="634.4" cy="239.2" r="3.1" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="P4" data-l="decor" data-c="LIV_LANT"><title>P4 · Washi floor lantern — Floor lantern</title>
+<circle cx="809.6" cy="371.8" r="6" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="809.6" cy="371.8" r="2.7" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="D2" data-l="accent" data-c="LIV_ART"><title>D2 · Pinhole accent — Art pinspots. 12° pools on the sumi canvas</title>
+<circle cx="789.4" cy="322.4" r="3.2" fill="#FF8C66"/><line x1="789.4" y1="322.4" x2="798.4" y2="322.4" stroke="#FF8C66" stroke-width="1.3"/>
+</g>
+<g class="f" data-t="D2" data-l="accent" data-c="LIV_ART"><title>D2 · Pinhole accent — Art pinspots</title>
+<circle cx="789.4" cy="291.2" r="3.2" fill="#FF8C66"/><line x1="789.4" y1="291.2" x2="798.4" y2="291.2" stroke="#FF8C66" stroke-width="1.3"/>
+</g>
+<g class="f" data-t="B1" data-l="accent" data-c="LIV_TV"><title>B1 · Screen bias light — Screen bias light. Behind the flush TV</title>
+<line x1="605.3" y1="325.0" x2="605.3" y2="273.0" stroke="#FF8C66" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="LIV_CONSOLE"><title>L3 · Plinth glow — Console plinth. Under the floating console</title>
+<line x1="625.6" y1="357.8" x2="625.6" y2="240.2" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="KIT_D"><title>D1 · Recessed downlight — Work downlights. Over the front edge of the counter, so you never stand in your own shadow</title>
+<circle cx="566.8" cy="642.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="566.8" cy="642.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="KIT_D"><title>D1 · Recessed downlight — Work downlights. Over the front edge of the counter, so you never stand in your own shadow</title>
+<circle cx="598.0" cy="642.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="598.0" cy="642.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="KIT_D"><title>D1 · Recessed downlight — Work downlights. Over the front edge of the counter, so you never stand in your own shadow</title>
+<circle cx="629.2" cy="642.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="629.2" cy="642.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="KIT_D"><title>D1 · Recessed downlight — Work downlights. Over the front edge of the counter, so you never stand in your own shadow</title>
+<circle cx="660.4" cy="642.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="660.4" cy="642.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="KIT_D"><title>D1 · Recessed downlight — Work downlights</title>
+<circle cx="702.0" cy="611.0" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="702.0" cy="611.0" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="KIT_D"><title>D1 · Recessed downlight — Work downlights</title>
+<circle cx="702.0" cy="559.0" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="702.0" cy="559.0" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="L4" data-l="task" data-c="KIT_SHELF"><title>L4 · Task line — Under-shelf line. Lights the limestone splash and worktop</title>
+<line x1="557.4" y1="670.8" x2="677.6" y2="670.8" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="P2" data-l="decor" data-c="KIT_PEND"><title>P2 · Small washi pendants Ø44 — Peninsula pendants</title>
+<circle cx="574.6" cy="551.2" r="5.5" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="574.6" cy="551.2" r="2.5" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="P2" data-l="decor" data-c="KIT_PEND"><title>P2 · Small washi pendants Ø44 — Peninsula pendants</title>
+<circle cx="621.4" cy="551.2" r="5.5" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="621.4" cy="551.2" r="2.5" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="KIT_PLINTH"><title>L3 · Plinth glow — Toe-kick + peninsula overhang. Toe-kick</title>
+<line x1="537.7" y1="645.8" x2="704.6" y2="645.8" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="KIT_PLINTH"><title>L3 · Plinth glow — Toe-kick + peninsula overhang</title>
+<line x1="704.6" y1="645.8" x2="704.6" y2="532.0" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="KIT_PLINTH"><title>L3 · Plinth glow — Toe-kick + peninsula overhang. Under the overhang at the stools</title>
+<line x1="537.7" y1="526.2" x2="650.0" y2="526.2" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="W1" data-l="task" data-c="KIT_PLINTH"><title>W1 · Wardrobe interior light — Toe-kick + peninsula overhang. Pantry interior</title>
+<rect x="718.8" y="506.6" width="6" height="6" fill="none" stroke="#F4EEE2" stroke-width="1.2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="COR_D"><title>D1 · Recessed downlight — Corridor downlights. At door thresholds only; dimmed to 30% in the evening</title>
+<circle cx="647.4" cy="439.4" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="647.4" cy="439.4" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="COR_D"><title>D1 · Recessed downlight — Corridor downlights. At door thresholds only; dimmed to 30% in the evening</title>
+<circle cx="488.8" cy="422.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="488.8" cy="422.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="COR_D"><title>D1 · Recessed downlight — Corridor downlights. At door thresholds only; dimmed to 30% in the evening</title>
+<circle cx="397.8" cy="422.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="397.8" cy="422.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="COR_D"><title>D1 · Recessed downlight — Corridor downlights. At door thresholds only; dimmed to 30% in the evening</title>
+<circle cx="293.8" cy="422.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="293.8" cy="422.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="COR_D"><title>D1 · Recessed downlight — Corridor downlights. At door thresholds only; dimmed to 30% in the evening</title>
+<circle cx="215.8" cy="422.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="215.8" cy="422.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="N1" data-l="night" data-c="NIGHT"><title>N1 · Step light — Night path: step lights + wardrobe-walk plinth</title>
+<rect x="557.6" y="446.8" width="8" height="5" fill="#C9965A"/>
+</g>
+<g class="f" data-t="N1" data-l="night" data-c="NIGHT"><title>N1 · Step light — Night path: step lights + wardrobe-walk plinth</title>
+<rect x="438.0" y="446.8" width="8" height="5" fill="#C9965A"/>
+</g>
+<g class="f" data-t="N1" data-l="night" data-c="NIGHT"><title>N1 · Step light — Night path: step lights + wardrobe-walk plinth</title>
+<rect x="341.8" y="446.8" width="8" height="5" fill="#C9965A"/>
+</g>
+<g class="f" data-t="N1" data-l="night" data-c="NIGHT"><title>N1 · Step light — Night path: step lights + wardrobe-walk plinth</title>
+<rect x="245.6" y="446.8" width="8" height="5" fill="#C9965A"/>
+</g>
+<g class="f" data-t="L5" data-l="task" data-c="WC_MIRROR"><title>L5 · Mirror face light — Mirror halo. Halo behind a round mirror</title>
+<line x1="529.4" y1="507.0" x2="529.4" y2="484.1" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="D2" data-l="accent" data-c="WC_PIN"><title>D2 · Pinhole accent — Basin pinspot. One beam on the stone basin; the dark room around it stays dark</title>
+<circle cx="519.0" cy="495.6" r="3.2" fill="#FF8C66"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="BATH_D"><title>D1 · Recessed downlight — Downlights (IP65 over the tub). IP65</title>
+<circle cx="342.2" cy="501.8" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="342.2" cy="501.8" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="BATH_D"><title>D1 · Recessed downlight — Downlights (IP65 over the tub)</title>
+<circle cx="405.6" cy="485.2" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="405.6" cy="485.2" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="L5" data-l="task" data-c="BATH_MIRROR"><title>L5 · Mirror face light — Mirror face lights</title>
+<line x1="377.0" y1="542.9" x2="416.0" y2="542.9" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L4" data-l="task" data-c="BATH_NICHE"><title>L4 · Task line — Tub niche line</title>
+<line x1="326.0" y1="535.6" x2="326.0" y2="468.0" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="LAUN_D"><title>D1 · Recessed downlight — Downlight</title>
+<circle cx="279.2" cy="494.0" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="279.2" cy="494.0" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="PASS_GRAZE"><title>L1 · Wall grazer in ceiling slot — Wardrobe face graze. Raking light along 3.50 m of oak fluting</title>
+<line x1="238.7" y1="382.2" x2="238.7" y2="208.0" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="NIGHT"><title>L3 · Plinth glow — Night path: step lights + wardrobe-walk plinth. Light line at the wardrobe foot</title>
+<line x1="240.8" y1="383.2" x2="240.8" y2="206.4" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="N1" data-l="night" data-c="NIGHT"><title>N1 · Step light — Night path: step lights + wardrobe-walk plinth</title>
+<rect x="188.4" y="332.9" width="8" height="5" fill="#C9965A"/>
+</g>
+<g class="f" data-t="N1" data-l="night" data-c="NIGHT"><title>N1 · Step light — Night path: step lights + wardrobe-walk plinth</title>
+<rect x="201.9" y="239.3" width="8" height="5" fill="#C9965A"/>
+</g>
+<g class="f" data-t="W1" data-l="task" data-c="PASS_GRAZE"><title>W1 · Wardrobe interior light — Wardrobe face graze. Inside every wardrobe bay</title>
+<rect x="254.39999999999998" y="290.8" width="6" height="6" fill="none" stroke="#F4EEE2" stroke-width="1.2"/>
+</g>
+<g class="f" data-t="L2" data-l="wall" data-c="MST_CURT"><title>L2 · Curtain-pocket wash — Curtain pockets. The glowing sheer behind the bed is the headboard light</title>
+<line x1="85.8" y1="114.9" x2="163.8" y2="114.9" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="L2" data-l="wall" data-c="MST_CURT"><title>L2 · Curtain-pocket wash — Curtain pockets</title>
+<line x1="43.2" y1="228.3" x2="43.2" y2="149.8" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="R1" data-l="task" data-c="MST_READ"><title>R1 · Wall reading light — Reading lights</title>
+<path d="M74.7,114.4 L65.7,114.4 L70.2,122.4 Z" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="R1" data-l="task" data-c="MST_READ"><title>R1 · Wall reading light — Reading lights</title>
+<path d="M183.9,114.4 L174.9,114.4 L179.4,122.4 Z" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="P5" data-l="decor" data-c="MST_LAMPS"><title>P5 · Paper bedside lamp — Bedside paper lamps</title>
+<circle cx="66.6" cy="124.3" r="4.5" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="66.6" cy="124.3" r="2.0" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="P5" data-l="decor" data-c="MST_LAMPS"><title>P5 · Paper bedside lamp — Bedside paper lamps</title>
+<circle cx="183.6" cy="124.3" r="4.5" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="183.6" cy="124.3" r="2.0" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="MST_ART"><title>L1 · Wall grazer in ceiling slot — Art wall. The wall you look at from the bed</title>
+<line x1="44.2" y1="273.5" x2="158.6" y2="273.5" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="D2" data-l="accent" data-c="MST_ART"><title>D2 · Pinhole accent — Art wall</title>
+<circle cx="98.8" cy="239.2" r="3.2" fill="#FF8C66"/><line x1="98.8" y1="239.2" x2="98.8" y2="248.2" stroke="#FF8C66" stroke-width="1.3"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="MST_NIGHT"><title>L3 · Plinth glow — Under-bed glow. Comes on at 5% when a foot touches the floor</title>
+<line x1="81.6" y1="213.2" x2="81.6" y2="137.8" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="MST_NIGHT"><title>L3 · Plinth glow — Under-bed glow</title>
+<line x1="168.0" y1="213.2" x2="168.0" y2="137.8" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="ENS_D"><title>D1 · Recessed downlight — Shower downlight. IP65</title>
+<circle cx="283.4" cy="133.6" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="283.4" cy="133.6" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="D1" data-l="task" data-c="ENS_D"><title>D1 · Recessed downlight — Shower downlight</title>
+<circle cx="241.8" cy="169.0" r="4.2" fill="#0F1114" stroke="#F4EEE2" stroke-width="1.4"/><circle cx="241.8" cy="169.0" r="1.4" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="L5" data-l="task" data-c="ENS_MIRROR"><title>L5 · Mirror face light — Mirror face lights</title>
+<line x1="305.8" y1="188.8" x2="305.8" y2="159.6" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L4" data-l="task" data-c="ENS_NICHE"><title>L4 · Task line — Shower niche</title>
+<line x1="262.6" y1="113.4" x2="301.6" y2="113.4" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="O1" data-l="task" data-c="B3_DESK"><title>O1 · Desk pendant, direct / indirect — Desk pendant (tunable). 70% of its light goes up to the ceiling</title>
+<line x1="470.6" y1="237.6" x2="533.0" y2="237.6" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="L1" data-l="wall" data-c="B3_GRAZE"><title>L1 · Wall grazer in ceiling slot — Wardrobe graze: the call backdrop. Behind you on a video call: depth instead of a black hole</title>
+<line x1="517.9" y1="352.0" x2="593.8" y2="352.0" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="B1" data-l="accent" data-c="B3_TV"><title>B1 · Screen bias light — Screen bias (RGBW)</title>
+<line x1="454.0" y1="325.0" x2="454.0" y2="273.0" stroke="#FF8C66" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L2" data-l="wall" data-c="B3_CURT"><title>L2 · Curtain-pocket wash — Curtain pocket</title>
+<line x1="483.6" y1="221.5" x2="556.4" y2="221.5" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="T1" data-l="task" data-c="MAM_TRACK"><title>T1 · Surface track, three mini spots — Surface track. Surface-mounted: no cutting in the safe-room ceiling</title>
+<line x1="317.2" y1="299.0" x2="416.0" y2="299.0" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="L5" data-l="task" data-c="MAM_MIRROR"><title>L5 · Mirror face light — Dressing mirror lights. Surface profiles either side of the mirror</title>
+<line x1="435.8" y1="299.0" x2="435.8" y2="247.0" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="P5" data-l="decor" data-c="MAM_LAMP"><title>P5 · Paper bedside lamp — Bedside lamp + reading light</title>
+<circle cx="370.8" cy="228.8" r="4.5" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="370.8" cy="228.8" r="2.0" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="R1" data-l="task" data-c="MAM_LAMP"><title>R1 · Wall reading light — Bedside lamp + reading light</title>
+<path d="M298.3,218.4 L289.3,218.4 L293.8,226.4 Z" fill="#F4EEE2"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="MAM_COLOR"><title>L3 · Plinth glow — Her colour line (RGBW). Halo behind the linen headboard; warm by default, any colour she likes</title>
+<line x1="288.6" y1="219.4" x2="356.2" y2="219.4" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="K1" data-l="decor" data-c="B4_DISC"><title>K1 · Flush opal disc Ø60 — Ceiling disc. Over the play rug, not over the bed</title>
+<circle cx="104.0" cy="371.8" r="8" fill="none" stroke="#F7D59B" stroke-width="1.4"/><circle cx="104.0" cy="371.8" r="3.6" fill="none" stroke="#F7D59B" stroke-width="1"/>
+</g>
+<g class="f" data-t="L2" data-l="wall" data-c="B4_CURT"><title>L2 · Curtain-pocket wash — Curtain pocket</title>
+<line x1="43.2" y1="412.4" x2="43.2" y2="345.8" stroke="#F2B872" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="L4" data-l="task" data-c="B4_BOOK"><title>L4 · Task line — Story light. Under the top book ledge, for bedtime stories</title>
+<line x1="59.8" y1="286.0" x2="109.2" y2="286.0" stroke="#F4EEE2" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="f" data-t="L3" data-l="night" data-c="B4_NIGHT"><title>L3 · Plinth glow — Night glow. Amber 1800 K under the toy shelves: no blue light at night</title>
+<line x1="164.8" y1="383.8" x2="164.8" y2="302.6" stroke="#C9965A" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="E2" data-l="outdoor" data-c="BAL_TREE"><title>E2 · Spike uplight — Planter uplights</title>
+<path d="M341.8,48.4 L349.8,48.4 M345.8,44.4 L345.8,52.4" stroke="#9CC4A2" stroke-width="1.6"/><circle cx="345.8" cy="48.4" r="2" fill="#9CC4A2"/>
+</g>
+<g class="f" data-t="E2" data-l="outdoor" data-c="BAL_TREE"><title>E2 · Spike uplight — Planter uplights</title>
+<path d="M362.6,48.4 L370.6,48.4 M366.6,44.4 L366.6,52.4" stroke="#9CC4A2" stroke-width="1.6"/><circle cx="366.6" cy="48.4" r="2" fill="#9CC4A2"/>
+</g>
+<g class="f" data-t="E2" data-l="outdoor" data-c="BAL_TREE"><title>E2 · Spike uplight — Planter uplights</title>
+<path d="M809.3,127.4 L817.3,127.4 M813.3,123.4 L813.3,131.4" stroke="#9CC4A2" stroke-width="1.6"/><circle cx="813.3" cy="127.4" r="2" fill="#9CC4A2"/>
+</g>
+<g class="f" data-t="E2" data-l="outdoor" data-c="BAL_TREE"><title>E2 · Spike uplight — Planter uplights</title>
+<path d="M809.3,65.0 L817.3,65.0 M813.3,61.0 L813.3,69.0" stroke="#9CC4A2" stroke-width="1.6"/><circle cx="813.3" cy="65.0" r="2" fill="#9CC4A2"/>
+</g>
+<g class="f" data-t="E3" data-l="outdoor" data-c="BAL_GLOW"><title>E3 · Outdoor plinth glow — Low glows. Under the outdoor sofa base</title>
+<line x1="489.8" y1="145.1" x2="607.4" y2="145.1" stroke="#9CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="E3" data-l="outdoor" data-c="BAL_GLOW"><title>E3 · Outdoor plinth glow — Low glows. Under the planter lip</title>
+<line x1="799.2" y1="157.6" x2="799.2" y2="29.6" stroke="#9CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1.5 2.5"/>
+</g>
+<g class="f" data-t="E1" data-l="outdoor" data-c="BAL_WALL"><title>E1 · Soffit grazer — Soffit grazers</title>
+<line x1="553.8" y1="191.9" x2="647.4" y2="191.9" stroke="#9CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="E1" data-l="outdoor" data-c="BAL_WALL"><title>E1 · Soffit grazer — Soffit grazers</title>
+<line x1="409.8" y1="191.9" x2="485.7" y2="191.9" stroke="#9CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 3"/>
+</g>
+<g class="f" data-t="E4" data-l="outdoor" data-c="BAL_TABLE"><title>E4 · Rechargeable table lamp — Table lamps</title>
+<circle cx="390.0" cy="117.0" r="3.6" fill="#9CC4A2"/>
+</g>
+<g class="f" data-t="E4" data-l="outdoor" data-c="BAL_TABLE"><title>E4 · Rechargeable table lamp — Table lamps</title>
+<circle cx="431.6" cy="117.0" r="3.6" fill="#9CC4A2"/>
+</g>
+</g>
+<text x="527.8" y="296.4" text-anchor="middle" class="nl-en">OFFICE · GAMES</text>
+<text x="353.6" y="358.8" text-anchor="middle" class="nl-en">TEEN</text>
+<text x="104.0" y="426.4" text-anchor="middle" class="nl-en">TODDLER</text>
+<text x="124.8" y="247.0" text-anchor="middle" class="nl-en">MAIN BEDROOM</text>
+<text x="720.2" y="236.6" text-anchor="middle" class="nl-en">LIVING</text>
+<text x="660.4" y="608.4" text-anchor="middle" class="nl-en">KITCHEN</text>
+<text x="577.2" y="44.2" text-anchor="middle" class="nl-en">BALCONY</text>
+<text x="748.8" y="410.8" text-anchor="middle" class="nl-en">ENTRY</text>
+<text x="358.8" y="404.0" text-anchor="middle" class="nl-en">CORRIDOR</text>
+<g><circle cx="951.6" cy="75.4" r="15" fill="none" stroke="#8C877C" stroke-width="0.8"/><path d="M951.6,62.400000000000006 L946.6,83.4 L951.6,79.4 L956.6,83.4 Z" fill="#C4BCAE"/><text x="951.6" y="56.400000000000006" text-anchor="middle" class="nl-en">N</text></g>
+<text x="868.4" y="28.6" text-anchor="middle" class="nl-en">HAIFA BAY ↑</text>
+</svg></div>
+      <div class="legend" role="group" aria-label="Fitting layers"><button type="button" class="lay" id="lay-wall" data-l="wall" aria-pressed="true"><i style="--c:#F2B872"></i>Wall light</button><button type="button" class="lay" id="lay-task" data-l="task" aria-pressed="true"><i style="--c:#F4EEE2"></i>Task</button><button type="button" class="lay" id="lay-accent" data-l="accent" aria-pressed="true"><i style="--c:#FF8C66"></i>Accent</button><button type="button" class="lay" id="lay-decor" data-l="decor" aria-pressed="true"><i style="--c:#F7D59B"></i>Paper lamps</button><button type="button" class="lay" id="lay-night" data-l="night" aria-pressed="true"><i style="--c:#C9965A"></i>Night path</button><button type="button" class="lay" id="lay-outdoor" data-l="outdoor" aria-pressed="true"><i style="--c:#9CC4A2"></i>Balcony</button></div>
+      <div class="under">
+        <div class="sc-now" aria-live="polite"><h3 id="sc-name"></h3><p class="when" id="sc-when"></p><p id="sc-text"></p></div>
+        <ul class="levels" id="sc-levels"></ul>
+      </div>
+    </figure>
+    <p class="capt">Glows are drawn to scale and show roughly where each fitting puts its light. Blue lines are glass. North is up, the bay is to the north and the sea is to the west.</p>
+  </section>
+
+  <section aria-labelledby="h-prin">
+    <div class="sec-head"><p class="eyebrow">Principles</p><h2 id="h-prin">Six rules, every room</h2></div>
+    <div class="principles">
+      <div><h3>Light the walls, not the floor</h3><p>We judge how bright a room is by its walls. Grazers on the limewash, the clay and the oak fluting make rooms read larger and calmer, and the ceiling stays quiet. The living room has no downlights at all.</p></div>
+      <div><h3>Never see the source</h3><p>Every LED sits in a slot, a curtain pocket or under a plinth. The few downlights sit 35 mm deep, so from the sofa you see a glow and never a bright dot.</p></div>
+      <div><h3>One colour of light</h3><p>2700 K everywhere, with high colour rendering so oak, linen and skin look right. The paper lamps and the night lights warm to 1800 K as they dim, like a flame. Only the office is tunable.</p></div>
+      <div><h3>Protect the view</h3><p>At night a bright room turns the 3 m slider into a mirror. Keep it dim near the glass and give the balcony a little light, and your eye looks through to the bay.</p></div>
+      <div><h3>Three heights of light</h3><p>Floor level for the night path and floating joinery, eye level for lamps, faces and art, ceiling line for the walls. The low layer is what gives a boutique hotel its calm.</p></div>
+      <div><h3>Scenes, not switches</h3><p>Each room has two to four scenes on a small keypad, and the public rooms follow the sunset by themselves. Nobody has to adjust a dimmer.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-day">
+    <div class="sec-head"><p class="eyebrow">15 October in Haifa</p><h2 id="h-day">From late sun to blue hour</h2><p>The living room faces north, so the sun never enters it directly. Late in the day the sun lights the bay outside instead, and through the west windows it falls into the main bedroom and bedroom 4. The electric light takes over as the daylight goes.</p></div>
+    <div class="day">
+      <div class="sky" aria-hidden="true"></div>
+      <div class="ticks">
+        <div><b>17:20</b><span class="sun">sun 9° · 254°</span><p>All lamps off. The north glass gives soft light, the far shore turns gold, and sun lies across the main bed.</p></div>
+        <div><b>17:40</b><span class="sun">sun 4°</span><p>A light sensor brings the paper column and the plinths up to 20%, keeping pace with the fading day.</p></div>
+        <div><b>18:00</b><span class="sun">sunset</span><p>Welcome scene. Evening fades in over 15 minutes as the sky over the sea turns pink.</p></div>
+        <div><b>18:25</b><span class="sun">sun −4° · blue hour</span><p>The bay's lights come on and the room inside balances with the deep blue sky. This is the hero shot.</p></div>
+        <div><b>20:00</b><span class="sun">night</span><p>Bay view: a glow near the glass, the balcony a little lit, so the city shows instead of your reflection.</p></div>
+        <div><b>23:00</b><span class="sun">night</span><p>Night path: an amber line at 5% where a foot touches the floor.</p></div>
+        <div><b>06:30</b><span class="sun">sunrise behind the Carmel</span><p>The kitchen shelf light at 30% until the north light fills the room.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-rooms">
+    <div class="sec-head"><p class="eyebrow">Room by room</p><h2 id="h-rooms">In the order of the walk-through</h2></div>
+    <div class="rooms">
+      <article class="room"><header><h3 lang="he" dir="rtl">מבואה</h3><p class="en">Entry</p></header><div class="rtext">
+        <p>The first thing you see is the glowing bench niche in the oak shoe cabinet, with the cabinet floating on its own line of light. One downlight lights the face of whoever is at the door. A ceiling slot grazes the slatted screen, so its slats throw stripes of shadow across the floor. Behind the slats the paper lantern glows. The east wall is lit all the way from the door to the glass, and it leads you in.</p>
+        <ul class="chips"><li>D1 door</li><li>L4 bench niche</li><li>L3 cabinet plinth</li><li>L1 screen</li><li>L1 guiding wall</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">ח.דיור</h3><p class="en">Living room</p></header><div class="rtext">
+        <p>No downlights. Two lit walls face each other: the guiding wall behind the sofa, with two pinspots on the sumi canvas, and the clay media wall opposite, grazed so its trowel marks show. The washi pendant is the one lamp you sit under. The olive tree is gone. In its place a 1.60 m paper column stands in the corner by the glass, and at dusk its glow balances the bright sky, so the room does not go flat against the view. The sheers glow from their pocket when drawn. At night the Bay view scene drops all of this to embers.</p>
+        <ul class="chips"><li>L1 east wall</li><li>L1 clay wall</li><li>L2 curtain</li><li>P1 pendant</li><li>P3 paper column (new)</li><li>P4 lantern</li><li>D2 ×2 art</li><li>B1 TV</li><li>L3 console</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">מטבח</h3><p class="en">Kitchen and peninsula</p></header><div class="rtext">
+        <p>This is the one place for bright, practical light. Downlights sit over the front edge of the counter, so you never stand in your own shadow, and a deep line under the oak shelf lights the limestone splash evenly. Two small washi pendants hang 75 cm above the peninsula, so faces at the bar are lit while eyes are not. A toe-kick line and a glow under the overhang make the kitchen read as floating furniture when the task lights are off.</p>
+        <ul class="chips"><li>D1 ×6</li><li>L4 shelf</li><li>P2 ×2</li><li>L3 toe-kick + overhang</li><li>W1 pantry</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">מסדרון · ש.אורחים</h3><p class="en">Corridor and guest WC</p></header><div class="rtext">
+        <p>Downlights only at the door thresholds, at 30% in the evening, and low step lights along the south wall for the night. The guest WC is the dark jewel box. A halo glows behind the round mirror and one pinspot lights the stone basin, while the dark plank and taupe clay stay in shadow. It is the most dramatic two square metres in the flat.</p>
+        <ul class="chips"><li>D1 ×5</li><li>N1 ×4</li><li>L5 mirror halo</li><li>D2 basin</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">ח.עבודה ומשחקים</h3><p class="en">Office and game room</p></header><div class="rtext">
+        <p>A direct/indirect pendant over the desk puts 70% of its light on the ceiling. That gives 500 lx on the desk with no glare on the screen. It is tunable, cooler for focused work by day and warm after 18:00. Behind you on a video call the fluted wardrobe is grazed, so the background has depth rather than a black hole. For games, everything drops except a bias light behind the screen, which can go any colour.</p>
+        <ul class="chips"><li>O1 desk</li><li>L1 call backdrop</li><li>B1 RGBW</li><li>L2 curtain</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">ממ"ד · ח.שינה</h3><p class="en">Teen room (safe room)</p></header><div class="rtext">
+        <p>Safe-room rules allow no recessed fittings, so everything here is surface-mounted or plugs in. A slim surface track with three small spots lights the bed wall, the desk and the wardrobe. Profiles either side of the dressing mirror light her face evenly, as in a make-up studio. A halo behind the linen headboard is warm by default, and she can turn it any colour she likes.</p>
+        <ul class="chips"><li>T1 track</li><li>L5 mirror</li><li>P5 lamp</li><li>R1 reading</li><li>L3 RGBW halo</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">ח.ילדה</h3><p class="en">Toddler room</p></header><div class="rtext">
+        <p>Nothing bright to look up into from a floor bed. A flush opal disc over the play rug, not over the bed, dims to 0.1%. A warm line under the top book ledge is the story light. At night an 1800 K amber glow under the toy shelves gives less than 2 lx with no blue in it. All of it is fixed in place and out of reach, with no lamps or cords.</p>
+        <ul class="chips"><li>K1 disc</li><li>L4 story</li><li>L3 night</li><li>L2 curtain</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">ח.שינה הורים</h3><p class="en">Main suite</p></header><div class="rtext">
+        <p>The wardrobe walk is grazed along 3.50 m of oak fluting, with a light line at its foot. In the bedroom the sheer behind the bed glows from its pocket and takes the place of a headboard light. Two articulated reading lights let one of you read without waking the other. The wall you look at from bed gets a graze and a pinspot on the art. Under the bed a 5% line comes on when your foot touches the floor. In the en-suite there is mirror light on the face, a niche line in the shower and a single IP65 downlight.</p>
+        <ul class="chips"><li>L1 wardrobe walk</li><li>L2 ×2</li><li>R1 ×2</li><li>P5 ×2</li><li>L1 + D2 art wall</li><li>L3 under bed</li><li>L5 · L4 · D1 en-suite</li></ul></div></article>
+      <article class="room"><header><h3 lang="he" dir="rtl">מרפסת</h3><p class="en">Balcony</p></header><div class="rtext">
+        <p>Nothing overhead and nothing aimed at the glass rail, so the bay stays the brightest thing in view. Uplights under the olive and the grasses make silhouettes against the water. Low glows under the sofa base and the planter lip catch the dark plank. A soft graze under the soffit lights the façade behind you, and that is what stops the slider turning into a mirror from inside. On the table, two rechargeable lamps give candle-level light.</p>
+        <ul class="chips"><li>E2 ×4</li><li>E3 ×2</li><li>E1 ×2</li><li>E4 ×2</li></ul></div></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-sched">
+    <div class="sec-head"><p class="eyebrow">Fixture schedule</p><h2 id="h-sched">Every fitting type, with quantities from the plan</h2><p>Hover a row to find those fittings on the plan above. Line lengths are measured from the drawing.</p></div>
+    <div class="tablewrap"><table class="sched"><thead><tr><th>Type</th><th>What and why</th><th>Specification</th><th>Qty</th></tr></thead><tbody id="sched"><tr data-t="L1"><td><span class="code" style="--c:#F2B872">L1</span></td><td><b>Wall grazer in ceiling slot</b><span class="why">Draws light down the wall so limewash, clay and fluted oak show their texture</span></td><td class="spec">Dot-free COB line, 2700 K, CRI 95 (R9 &gt; 50), 10 W/m ≈ 900 lm/m, 10×60° asymmetric lens, 60 mm from the wall, DALI-2 dim to 0.1%</td><td class="num">14.4 m</td></tr><tr data-t="L2"><td><span class="code" style="--c:#F2B872">L2</span></td><td><b>Curtain-pocket wash</b><span class="why">Turns closed linen sheers into a soft luminous wall</span></td><td class="spec">COB line in the curtain recess, 2700 K, 6 W/m, 40° lens, dim to 0.1%</td><td class="num">9.2 m</td></tr><tr data-t="L3"><td><span class="code" style="--c:#C9965A">L3</span></td><td><b>Plinth glow</b><span class="why">Makes joinery float, and doubles as the night path at 5%</span></td><td class="spec">Opal COB line under floating joinery, 2200 K, 4 W/m, dim to 1%</td><td class="num">20.3 m</td></tr><tr data-t="L4"><td><span class="code" style="--c:#F4EEE2">L4</span></td><td><b>Task line</b><span class="why">Shadow-free light on worktops, niches and book ledges</span></td><td class="spec">Deep aluminium profile with opal cover, 2700 K, CRI 95, 12 W/m</td><td class="num">5.9 m</td></tr><tr data-t="L5"><td><span class="code" style="--c:#F4EEE2">L5</span></td><td><b>Mirror face light</b><span class="why">Light from the front, so there are no shadows under the eyes</span></td><td class="spec">Vertical or halo lines either side of the mirror, 2700 K, CRI 95, about 300 lx on the face, IP44</td><td class="num">2.7 m</td></tr><tr data-t="D1"><td><span class="code" style="--c:#F4EEE2">D1</span></td><td><b>Recessed downlight</b><span class="why">Only where hands work or faces meet; never over a sofa or a bed</span></td><td class="spec">Trimless Ø55 mm, source set back ≥ 35 mm (40° cut-off), 7 W ≈ 500 lm, 2700 K, CRI 95, 36° beam; IP65 version in wet zones</td><td class="num">17</td></tr><tr data-t="D2"><td><span class="code" style="--c:#FF8C66">D2</span></td><td><b>Pinhole accent</b><span class="why">A tight pool on art and stone; the fitting itself is nearly invisible</span></td><td class="spec">Trimless Ø30 mm, adjustable ±35°, 4 W, 12° beam, 2700 K, CRI 97, honeycomb louvre</td><td class="num">4</td></tr><tr data-t="P1"><td><span class="code" style="--c:#F7D59B">P1</span></td><td><b>Washi pendant Ø80</b><span class="why">The one visible lamp in the room: the lantern you sit under</span></td><td class="spec">Existing paper pendant over the coffee table, dim-to-warm lamp 2700 → 1800 K, hung 1.75 m above the floor</td><td class="num">1</td></tr><tr data-t="P2"><td><span class="code" style="--c:#F7D59B">P2</span></td><td><b>Small washi pendants Ø44</b><span class="why">Light on the faces at the bar without glare in the eyes</span></td><td class="spec">Pair over the peninsula, 0.75 m above the top, opal inner diffuser, dim-to-warm</td><td class="num">2</td></tr><tr data-t="P3"><td><span class="code" style="--c:#F7D59B">P3</span></td><td><b>Paper column floor lamp</b><span class="why">A tall glow in the corner by the glass that balances the view at dusk</span></td><td class="spec">NEW. Ø45 × h 1.60, handmade washi on bamboo ribs, dim-to-warm 2700 → 1800 K. Replaces the olive tree</td><td class="num">1</td></tr><tr data-t="P4"><td><span class="code" style="--c:#F7D59B">P4</span></td><td><b>Washi floor lantern</b><span class="why">Glows through the slats when you open the front door</span></td><td class="spec">Existing, h 1.40, beside the sofa behind the slatted screen</td><td class="num">1</td></tr><tr data-t="P5"><td><span class="code" style="--c:#F7D59B">P5</span></td><td><b>Paper bedside lamp</b><span class="why">The warm low glow you fall asleep by</span></td><td class="spec">Small paper table lamp, 1800–2700 K dim-to-warm, touch dimmer</td><td class="num">3</td></tr><tr data-t="R1"><td><span class="code" style="--c:#F4EEE2">R1</span></td><td><b>Wall reading light</b><span class="why">Reads a book without waking the person next to you</span></td><td class="spec">Articulated arm, 3 W, 2700 K, 20° beam with louvre, touch dimmer at the head</td><td class="num">3</td></tr><tr data-t="O1"><td><span class="code" style="--c:#F4EEE2">O1</span></td><td><b>Desk pendant, direct / indirect</b><span class="why">Bright, even desk light with no glare on the screen; the ceiling glows</span></td><td class="spec">Linear 1.20 m, 30% down / 70% up, tunable 2700–4000 K, UGR &lt; 16</td><td class="num">1.2 m</td></tr><tr data-t="B1"><td><span class="code" style="--c:#FF8C66">B1</span></td><td><b>Screen bias light</b><span class="why">Rests the eyes in a dark room and makes the screen look deeper</span></td><td class="spec">Line behind the screen, 2700 K, 3 W/m; RGBW option in the game room</td><td class="num">2.0 m</td></tr><tr data-t="K1"><td><span class="code" style="--c:#F7D59B">K1</span></td><td><b>Flush opal disc Ø60</b><span class="why">Soft play light with nothing for a small child to look into</span></td><td class="spec">Fully diffuse, no visible LED, dim-to-warm 2700 → 1800 K, dims to 0.1%</td><td class="num">1</td></tr><tr data-t="T1"><td><span class="code" style="--c:#F4EEE2">T1</span></td><td><b>Surface track, three mini spots</b><span class="why">Safe-room rules allow no recessed fittings, so the track does the work</span></td><td class="spec">Surface-mounted, no cutting into the ceiling, 3 × 5 W, 2700 K, 30° beams</td><td class="num">1.9 m</td></tr><tr data-t="W1"><td><span class="code" style="--c:#F4EEE2">W1</span></td><td><b>Wardrobe interior light</b><span class="why">See true colours when you choose clothes</span></td><td class="spec">Line inside each door bay, 2700 K, CRI 95, door-contact switch</td><td class="num">2</td></tr><tr data-t="N1"><td><span class="code" style="--c:#C9965A">N1</span></td><td><b>Step light</b><span class="why">Find the way at night without waking up</span></td><td class="spec">Recessed in the wall 0.30 m above the floor, 1.5 W, 2200 K, louvred so only the floor lights, presence sensor 23:00–06:00</td><td class="num">6</td></tr><tr data-t="E1"><td><span class="code" style="--c:#9CC4A2">E1</span></td><td><b>Soffit grazer</b><span class="why">Gives the balcony back wall a soft glow, so the glass shows the outside and not a mirror</span></td><td class="spec">IP65 line under the balcony soffit, 2700 K, 6 W/m, washes the façade down</td><td class="num">3.3 m</td></tr><tr data-t="E2"><td><span class="code" style="--c:#9CC4A2">E2</span></td><td><b>Spike uplight</b><span class="why">Lights the olive and the grasses from below: the silhouette against the bay</span></td><td class="spec">IP67, 5 W, 2200 K, 15° beam, glare shield, in the planters</td><td class="num">4</td></tr><tr data-t="E3"><td><span class="code" style="--c:#9CC4A2">E3</span></td><td><b>Outdoor plinth glow</b><span class="why">Low light on the plank floor that keeps the eye level clear for the view</span></td><td class="spec">IP67 opal line under the sofa base and the planter lip, 2200 K, 4 W/m</td><td class="num">4.7 m</td></tr><tr data-t="E4"><td><span class="code" style="--c:#9CC4A2">E4</span></td><td><b>Rechargeable table lamp</b><span class="why">Candle-level light at the table; nothing overhead between you and the stars</span></td><td class="spec">Portable, 2200 K, 150 lm, dims by touch</td><td class="num">2</td></tr></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-sc">
+    <div class="sec-head"><p class="eyebrow">Scenes</p><h2 id="h-sc">Seven moods on a keypad</h2></div>
+    <div class="sc-grid"><div class="sc-card"><h3>Welcome <span lang="he" dir="rtl">כניסה</span></h3><p class="sc-when">From 30 min before sunset, at the door · keypad: Entry: top button</p><p>Open the door at dusk: the bench niche glows, the east wall leads you in, and the paper lamps are already on by the glass.</p></div><div class="sc-card"><h3>Evening <span lang="he" dir="rtl">ערב</span></h3><p class="sc-when">Blue hour to 22:00 · keypad: Entry · living</p><p>Walls lit, ceiling quiet, three paper glows. Light sits low and warm, like a ryokan after dark.</p></div><div class="sc-card"><h3>Cooking <span lang="he" dir="rtl">בישול</span></h3><p class="sc-when">Any time · keypad: Kitchen</p><p>Full task light on the worktop and the peninsula; the living room stays at evening level so the open space still feels calm.</p></div><div class="sc-card"><h3>Bay view <span lang="he" dir="rtl">נוף</span></h3><p class="sc-when">After 20:00 · keypad: Living: bottom button</p><p>Glass turns into a mirror when the room is brighter than the night. Everything near the slider drops to a glow and the balcony comes up a little, so you see Haifa Bay&#x27;s lights instead of yourself.</p></div><div class="sc-card"><h3>Film <span lang="he" dir="rtl">סרט</span></h3><p class="sc-when">Any time · keypad: Living</p><p>Bias light behind the screen, the console floating at 10%, the art barely there. Enough to find your glass.</p></div><div class="sc-card"><h3>Bedtime <span lang="he" dir="rtl">שינה</span></h3><p class="sc-when">21:00 onwards · keypad: Each bedroom</p><p>Public rooms fade out over ten minutes. Reading lights, paper lamps and the story light, all at 2200 K or warmer.</p></div><div class="sc-card"><h3>Night path <span lang="he" dir="rtl">לילה</span></h3><p class="sc-when">23:00–06:00, by presence · keypad: Automatic</p><p>A foot on the floor brings up a 5% amber line: under the bed, along the wardrobe walk, at the step lights to the bathroom. Nothing at eye level.</p></div></div>
+  </section>
+
+  <section class="two" aria-label="Light levels and building notes">
+    <div><div class="sec-head"><p class="eyebrow">Targets</p><h2>How much light, where</h2></div>
+      <div class="tablewrap"><table><thead><tr><th>Place</th><th>Level</th><th>From</th></tr></thead><tbody><tr><td>Kitchen worktop</td><td class="num">500 lx</td><td class="muted">D1 + L4</td></tr><tr><td>Desk</td><td class="num">500 lx, tunable</td><td class="muted">O1</td></tr><tr><td>Bathroom mirror, on the face</td><td class="num">300 lx vertical</td><td class="muted">L5</td></tr><tr><td>Living room, evening</td><td class="num">50–100 lx</td><td class="muted">Walls + paper</td></tr><tr><td>Living walls (vertical)</td><td class="num">60–120 lx</td><td class="muted">L1</td></tr><tr><td>Corridor, evening</td><td class="num">30 lx</td><td class="muted">D1 at 30%</td></tr><tr><td>Night path</td><td class="num">2–5 lx on the floor</td><td class="muted">L3 + N1</td></tr><tr><td>Toddler room, night</td><td class="num">< 2 lx, 1800 K</td><td class="muted">L3</td></tr><tr><td>Balcony, Bay view</td><td class="num">5–10 lx</td><td class="muted">E2 + E3</td></tr></tbody></table></div></div>
+    <div><div class="sec-head"><p class="eyebrow">Building it</p><h2>Notes for the electrician</h2></div>
+      <div class="notes">
+        <div><h3>An 80 mm ceiling void</h3><p>This assumes a 2.70 m slab. A gypsum ceiling dropped to 2.62 m in the entry, living room, kitchen and corridor hides the slots and the trimless downlights. The bedrooms need only a perimeter slot where there is a grazer or a curtain pocket.</p></div>
+        <div><h3>Safe room</h3><p>Home Front Command rules restrict cutting into the safe room's walls and ceiling. Everything there is surface-mounted or plugged in. Confirm with your contractor before any work.</p></div>
+        <div><h3>One system of scenes</h3><p>Casambi (wireless, good for a renovation) or KNX with DALI-2 drivers if the walls are open. Keypads go at the entry, the living room, the kitchen and each bed. Use flicker-free drivers that dim smoothly down to 0.1%.</p></div>
+        <div><h3>Match every LED</h3><p>Buy all strips from one maker and one colour bin (≤ 2-step MacAdam) so the lines match. Use dot-free COB strip, because the ivory tile has enough sheen to mirror a dotted strip.</p></div>
+        <div><h3>Sea air</h3><p>At 13 floors above Haifa Bay, use IP65–IP67 fittings in marine-grade housings (anodised aluminium or 316 stainless) on the balcony.</p></div>
+      </div></div>
+  </section>
+
+  <section class="next" aria-labelledby="h-next">
+    <p class="eyebrow">Next</p>
+    <h2 id="h-next">What changes in the 3D proof</h2>
+    <ul>
+      <li>Every fitting on this plan is built in Blender as a real light: grazers and plinths as hidden emitting lines, and downlights and pinspots with real beam photometry, so their pools and scallops on the walls are physically correct.</li>
+      <li>Two hero moments: 17:20 with low sun on the bay, and 18:25 at blue hour, when the city lights across Haifa Bay come on and the interior is in the Evening scene.</li>
+      <li>The olive tree is replaced by the paper column lamp, with more styling: books, throws, ceramics.</li>
+      <li>On the scroll page the walk-through can run from late afternoon to blue hour, so each room's lights come on as the camera arrives.</li>
+    </ul>
+  </section>
+</div>
+<script>
+const DATA = {"scenes": {"all": {"name": "All circuits", "when": "Plan view", "keypad": "—", "text": "Every fitting at a working level, to read the plan.", "levels": {"ENT_D": 60, "ENT_NICHE": 60, "ENT_SCREEN": 60, "WALL_E": 60, "WALL_MEDIA": 60, "LIV_CURT": 60, "LIV_PEND": 60, "LIV_COL": 60, "LIV_LANT": 60, "LIV_ART": 60, "LIV_TV": 60, "LIV_CONSOLE": 60, "KIT_D": 60, "KIT_SHELF": 60, "KIT_PEND": 60, "KIT_PLINTH": 60, "COR_D": 60, "NIGHT": 60, "WC_MIRROR": 60, "WC_PIN": 60, "BATH_D": 60, "BATH_MIRROR": 60, "BATH_NICHE": 60, "LAUN_D": 60, "PASS_GRAZE": 60, "MST_CURT": 60, "MST_READ": 60, "MST_LAMPS": 60, "MST_ART": 60, "MST_NIGHT": 60, "ENS_D": 60, "ENS_MIRROR": 60, "ENS_NICHE": 60, "B3_DESK": 60, "B3_GRAZE": 60, "B3_TV": 60, "B3_CURT": 60, "MAM_TRACK": 60, "MAM_MIRROR": 60, "MAM_LAMP": 60, "MAM_COLOR": 60, "B4_DISC": 60, "B4_CURT": 60, "B4_BOOK": 60, "B4_NIGHT": 60, "BAL_TREE": 60, "BAL_GLOW": 60, "BAL_WALL": 60, "BAL_TABLE": 60}}, "welcome": {"name": "Welcome", "when": "From 30 min before sunset, at the door", "keypad": "Entry: top button", "text": "Open the door at dusk: the bench niche glows, the east wall leads you in, and the paper lamps are already on by the glass.", "levels": {"ENT_NICHE": 80, "ENT_D": 40, "ENT_SCREEN": 60, "WALL_E": 50, "LIV_COL": 45, "LIV_LANT": 45, "KIT_PLINTH": 30, "KIT_SHELF": 30, "COR_D": 20, "BAL_TREE": 30, "BAL_GLOW": 25}}, "evening": {"name": "Evening", "when": "Blue hour to 22:00", "keypad": "Entry · living", "text": "Walls lit, ceiling quiet, three paper glows. Light sits low and warm, like a ryokan after dark.", "levels": {"WALL_E": 55, "WALL_MEDIA": 45, "LIV_CURT": 35, "LIV_PEND": 35, "LIV_COL": 60, "LIV_LANT": 55, "LIV_ART": 70, "LIV_CONSOLE": 30, "ENT_NICHE": 45, "ENT_SCREEN": 40, "KIT_SHELF": 50, "KIT_PEND": 40, "KIT_PLINTH": 30, "COR_D": 15, "PASS_GRAZE": 30, "WC_MIRROR": 40, "WC_PIN": 40, "MST_LAMPS": 40, "MST_CURT": 30, "B3_GRAZE": 20, "BAL_TREE": 50, "BAL_GLOW": 40, "BAL_WALL": 25, "BAL_TABLE": 60}}, "cook": {"name": "Cooking", "when": "Any time", "keypad": "Kitchen", "text": "Full task light on the worktop and the peninsula; the living room stays at evening level so the open space still feels calm.", "levels": {"KIT_D": 100, "KIT_SHELF": 100, "KIT_PEND": 70, "KIT_PLINTH": 40, "WALL_E": 40, "WALL_MEDIA": 30, "LIV_COL": 40, "LIV_LANT": 35, "LIV_ART": 50, "ENT_NICHE": 30}}, "view": {"name": "Bay view", "when": "After 20:00", "keypad": "Living: bottom button", "text": "Glass turns into a mirror when the room is brighter than the night. Everything near the slider drops to a glow and the balcony comes up a little, so you see Haifa Bay's lights instead of yourself.", "levels": {"LIV_COL": 12, "LIV_LANT": 15, "WALL_E": 12, "LIV_ART": 25, "LIV_CONSOLE": 10, "KIT_PLINTH": 12, "ENT_NICHE": 12, "BAL_TREE": 25, "BAL_GLOW": 20, "BAL_WALL": 10, "BAL_TABLE": 30}}, "film": {"name": "Film", "when": "Any time", "keypad": "Living", "text": "Bias light behind the screen, the console floating at 10%, the art barely there. Enough to find your glass.", "levels": {"LIV_TV": 30, "LIV_CONSOLE": 10, "WALL_E": 8, "LIV_ART": 10, "KIT_PLINTH": 8}}, "bedtime": {"name": "Bedtime", "when": "21:00 onwards", "keypad": "Each bedroom", "text": "Public rooms fade out over ten minutes. Reading lights, paper lamps and the story light, all at 2200 K or warmer.", "levels": {"MST_READ": 60, "MST_LAMPS": 30, "MST_NIGHT": 10, "PASS_GRAZE": 15, "B4_BOOK": 50, "B4_NIGHT": 10, "MAM_LAMP": 50, "MAM_COLOR": 30, "ENS_MIRROR": 20, "BATH_MIRROR": 30, "NIGHT": 10, "B3_TV": 0}}, "night": {"name": "Night path", "when": "23:00–06:00, by presence", "keypad": "Automatic", "text": "A foot on the floor brings up a 5% amber line: under the bed, along the wardrobe walk, at the step lights to the bathroom. Nothing at eye level.", "levels": {"NIGHT": 8, "MST_NIGHT": 8, "B4_NIGHT": 6, "KIT_PLINTH": 5, "ENS_MIRROR": 5, "BATH_MIRROR": 5, "WC_MIRROR": 5}}}, "circuits": {"ENT_D": {"name": "Door downlight", "room": "entry"}, "ENT_NICHE": {"name": "Bench niche + cabinet plinth", "room": "entry"}, "ENT_SCREEN": {"name": "Slatted screen graze", "room": "entry"}, "WALL_E": {"name": "Guiding wall: east wall from door to glass", "room": "living"}, "WALL_MEDIA": {"name": "Clay media wall graze", "room": "living"}, "LIV_CURT": {"name": "Curtain pocket", "room": "living"}, "LIV_PEND": {"name": "Washi pendant", "room": "living"}, "LIV_COL": {"name": "Paper column floor lamp", "room": "living"}, "LIV_LANT": {"name": "Floor lantern", "room": "living"}, "LIV_ART": {"name": "Art pinspots", "room": "living"}, "LIV_TV": {"name": "Screen bias light", "room": "living"}, "LIV_CONSOLE": {"name": "Console plinth", "room": "living"}, "KIT_D": {"name": "Work downlights", "room": "kitchen"}, "KIT_SHELF": {"name": "Under-shelf line", "room": "kitchen"}, "KIT_PEND": {"name": "Peninsula pendants", "room": "kitchen"}, "KIT_PLINTH": {"name": "Toe-kick + peninsula overhang", "room": "kitchen"}, "COR_D": {"name": "Corridor downlights", "room": "corridor"}, "NIGHT": {"name": "Night path: step lights + wardrobe-walk plinth", "room": "corridor"}, "WC_MIRROR": {"name": "Mirror halo", "room": "wc"}, "WC_PIN": {"name": "Basin pinspot", "room": "wc"}, "BATH_D": {"name": "Downlights (IP65 over the tub)", "room": "bath"}, "BATH_MIRROR": {"name": "Mirror face lights", "room": "bath"}, "BATH_NICHE": {"name": "Tub niche line", "room": "bath"}, "LAUN_D": {"name": "Downlight", "room": "laundry"}, "PASS_GRAZE": {"name": "Wardrobe face graze", "room": "passage"}, "MST_CURT": {"name": "Curtain pockets", "room": "master"}, "MST_READ": {"name": "Reading lights", "room": "master"}, "MST_LAMPS": {"name": "Bedside paper lamps", "room": "master"}, "MST_ART": {"name": "Art wall", "room": "master"}, "MST_NIGHT": {"name": "Under-bed glow", "room": "master"}, "ENS_D": {"name": "Shower downlight", "room": "ensuite"}, "ENS_MIRROR": {"name": "Mirror face lights", "room": "ensuite"}, "ENS_NICHE": {"name": "Shower niche", "room": "ensuite"}, "B3_DESK": {"name": "Desk pendant (tunable)", "room": "bed3"}, "B3_GRAZE": {"name": "Wardrobe graze: the call backdrop", "room": "bed3"}, "B3_TV": {"name": "Screen bias (RGBW)", "room": "bed3"}, "B3_CURT": {"name": "Curtain pocket", "room": "bed3"}, "MAM_TRACK": {"name": "Surface track", "room": "mamad"}, "MAM_MIRROR": {"name": "Dressing mirror lights", "room": "mamad"}, "MAM_LAMP": {"name": "Bedside lamp + reading light", "room": "mamad"}, "MAM_COLOR": {"name": "Her colour line (RGBW)", "room": "mamad"}, "B4_DISC": {"name": "Ceiling disc", "room": "bed4"}, "B4_CURT": {"name": "Curtain pocket", "room": "bed4"}, "B4_BOOK": {"name": "Story light", "room": "bed4"}, "B4_NIGHT": {"name": "Night glow", "room": "bed4"}, "BAL_TREE": {"name": "Planter uplights", "room": "terrace"}, "BAL_GLOW": {"name": "Low glows", "room": "terrace"}, "BAL_WALL": {"name": "Soffit grazers", "room": "terrace"}, "BAL_TABLE": {"name": "Table lamps", "room": "terrace"}}};
+const svg = document.querySelector('.nplan');
+const glows = [...svg.querySelectorAll('.g')];
+function setScene(id) {
+  const sc = DATA.scenes[id]; if (!sc) return;
+  document.querySelectorAll('.scn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === id)));
+  for (const g of glows) {
+    const l = sc.levels[g.dataset.c] || 0, s = +g.dataset.s;
+    g.setAttribute('opacity', l > 0 ? (s * Math.pow(l / 100, 0.55)).toFixed(3) : 0);
+  }
+  document.getElementById('sc-name').textContent = sc.name;
+  document.getElementById('sc-when').textContent = sc.when + (sc.keypad && sc.keypad !== '—' ? ' · keypad: ' + sc.keypad : '');
+  document.getElementById('sc-text').textContent = sc.text;
+  const ul = document.getElementById('sc-levels'); ul.textContent = '';
+  const on = Object.entries(sc.levels).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const show = id === 'all' ? [] : on;
+  for (const [c, v] of show) {
+    const li = document.createElement('li');
+    const n = document.createElement('span'); n.textContent = DATA.circuits[c] ? DATA.circuits[c].name : c;
+    const p = document.createElement('span'); p.textContent = v + '%'; p.style.textAlign = 'right';
+    const bar = document.createElement('span'); bar.className = 'bar'; const i = document.createElement('i'); i.style.width = v + '%'; bar.appendChild(i);
+    li.append(n, p, bar); ul.appendChild(li);
+  }
+  if (id === 'all') { const li = document.createElement('li'); li.textContent = Object.keys(DATA.circuits).length + ' circuits at 60%'; ul.appendChild(li); }
+  try { localStorage.setItem('bay-light-scene', id); } catch (e) {}
+}
+document.querySelectorAll('.scn').forEach(b => b.addEventListener('click', () => setScene(b.dataset.s)));
+const off = new Set();
+document.querySelectorAll('.lay').forEach(b => b.addEventListener('click', () => {
+  const l = b.dataset.l; off.has(l) ? off.delete(l) : off.add(l);
+  b.setAttribute('aria-pressed', String(!off.has(l)));
+  svg.setAttribute('data-off', [...off].join(' '));
+}));
+document.querySelectorAll('#sched tr').forEach(r => {
+  r.addEventListener('mouseenter', () => svg.setAttribute('data-hl', r.dataset.t));
+  r.addEventListener('mouseleave', () => svg.removeAttribute('data-hl'));
+});
+let start = 'evening'; try { const s = localStorage.getItem('bay-light-scene'); if (s && DATA.scenes[s]) start = s; } catch (e) {}
+setScene(start);
+</script>
