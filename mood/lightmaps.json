@@ -5,22 +5,22 @@
    "maps": {
     "morning": {
      "file": "lm/S_morning.webp",
-     "scale": 4.710712432861328
+     "scale": 4.689460754394531
     },
     "midday": {
      "file": "lm/S_midday.webp",
-     "scale": 6.654095649719238
+     "scale": 6.659347057342529
     },
     "dusk": {
      "file": "lm/S_dusk.webp",
-     "scale": 0.19696924090385437
+     "scale": 0.19695289433002472
     }
    },
    "channels": {
     "entry": {
      "file": "lm/S_lamps0.webp",
      "channel": 0,
-     "scale": 0.17556387186050415,
+     "scale": 0.1914110779762268,
      "circuits": [
       "ENT_D",
       "ENT_NICHE",
@@ -30,7 +30,7 @@
     "walls": {
      "file": "lm/S_lamps0.webp",
      "channel": 1,
-     "scale": 0.5150237083435059,
+     "scale": 0.5185356140136719,
      "circuits": [
       "WALL_E",
       "LIV_CURT"
@@ -39,7 +39,7 @@
     "media": {
      "file": "lm/S_lamps0.webp",
      "channel": 2,
-     "scale": 0.14166273176670074,
+     "scale": 0.11507758498191833,
      "circuits": [
       "WALL_MEDIA",
       "LIV_ART"
@@ -48,7 +48,7 @@
     "paper": {
      "file": "lm/S_lamps1.webp",
      "channel": 0,
-     "scale": 0.15488439798355103,
+     "scale": 0.1552785336971283,
      "circuits": [
       "LIV_PEND",
       "LIV_COL",
@@ -58,7 +58,7 @@
     "screen": {
      "file": "lm/S_lamps1.webp",
      "channel": 1,
-     "scale": 0.004138098563998938,
+     "scale": 0.004190562758594751,
      "circuits": [
       "LIV_TV",
       "LIV_CONSOLE"
@@ -67,7 +67,7 @@
     "kitchen": {
      "file": "lm/S_lamps1.webp",
      "channel": 2,
-     "scale": 0.19253480434417725,
+     "scale": 0.2891392111778259,
      "circuits": [
       "KIT_D",
       "KIT_SHELF",
@@ -78,7 +78,7 @@
     "corridor": {
      "file": "lm/S_lamps2.webp",
      "channel": 0,
-     "scale": 0.39584076404571533,
+     "scale": 0.4115251302719116,
      "circuits": [
       "COR_D",
       "NIGHT",
@@ -88,7 +88,7 @@
     "master": {
      "file": "lm/S_lamps2.webp",
      "channel": 1,
-     "scale": 0.6251756548881531,
+     "scale": 0.6681846380233765,
      "circuits": [
       "MST_CURT",
       "MST_READ",
@@ -100,7 +100,7 @@
     "bed3": {
      "file": "lm/S_lamps2.webp",
      "channel": 2,
-     "scale": 0.6011431217193604,
+     "scale": 0.5851481556892395,
      "circuits": [
       "B3_DESK",
       "B3_GRAZE",
@@ -111,7 +111,7 @@
     "mamad": {
      "file": "lm/S_lamps3.webp",
      "channel": 0,
-     "scale": 0.12241047620773315,
+     "scale": 0.11904428154230118,
      "circuits": [
       "MAM_TRACK",
       "MAM_MIRROR",
@@ -122,7 +122,7 @@
     "bed4": {
      "file": "lm/S_lamps3.webp",
      "channel": 1,
-     "scale": 0.38633519411087036,
+     "scale": 0.4058692455291748,
      "circuits": [
       "B4_DISC",
       "B4_CURT",
@@ -133,7 +133,7 @@
     "terrace": {
      "file": "lm/S_lamps3.webp",
      "channel": 2,
-     "scale": 0.2213977426290512,
+     "scale": 0.2349262237548828,
      "circuits": [
       "BAL_TREE",
       "BAL_GLOW",
@@ -433,7 +433,8 @@
  "order": [
   "S",
   "L",
-  "R"
+  "R",
+  "ES"
  ],
  "day": [
   "morning",
