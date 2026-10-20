@@ -14,8 +14,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=16';
-import { createOpenings } from './openings.js?v=16';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=17';
+import { createOpenings } from './openings.js?v=17';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
