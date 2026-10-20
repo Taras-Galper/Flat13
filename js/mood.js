@@ -14,7 +14,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=13';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=14';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -637,6 +637,7 @@ async function init() {
   applyPicks(); applyLight();
   if (!later.length) { if (pendingLayout) FURN.load(pendingLayout); furnReady = true; }
   document.getElementById('veil').classList.add('is-gone');
+  startFrames();                      // draw now: the bedrooms can take a while on a slow connection
   // the bedrooms follow in the background
   for (const a of later) {
     setBusy(true);
@@ -1204,5 +1205,7 @@ function frame(now) {
   else renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
-init().then(() => requestAnimationFrame(frame)).catch((e) => { console.error(e); $('#veil .veil__en').textContent = 'Could not load the flat: ' + e.message; });
+let framesOn = false;
+function startFrames() { if (!framesOn) { framesOn = true; requestAnimationFrame(frame); } }
+init().then(startFrames).catch((e) => { console.error(e); $('#veil .veil__en').textContent = 'Could not load the flat: ' + e.message; });
 window.__mood = { get FURN() { return FURN; }, state, applyLight, applySample, applyMood, setView, walkTo, enterEye, V, scene, camera, renderer, U, eye, parts, openBoard, get MANIFEST() { return MANIFEST; } };
