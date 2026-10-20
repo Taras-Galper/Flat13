@@ -14,7 +14,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=15';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=16';
+import { createOpenings } from './openings.js?v=16';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -159,6 +160,8 @@ const U = {
   grade: { value: new THREE.Vector3(1, 1, 1) },   // a white balance per time of day, like the renders' 3600 K
   flat: { value: FLAT },
   relief: { value: Q.has('norelief') ? 0 : 0.9 },   // how strongly the bump maps shade the baked light
+  time: { value: 0 },                                // the breeze in the sheers
+  sheer: { value: 0 },                               // daylight through a sheer, seen from the room
 };
 let MANIFEST = null, TEXMAP = {};
 // every file the page loads carries the release version, so a new deploy never mixes with cached old files
@@ -246,7 +249,7 @@ function lmArray(A, name) {
     bms.forEach((bm) => bm && bm.close && bm.close()); files.forEach((f) => f && delete lmBitmaps[f]);
   });
   let loading = null;
-  const load = () => (loading = loading || (useK ? fromKTX() : fromWebP()).then(() => { envDirty = performance.now(); })
+  const load = () => (loading = loading || (useK ? fromKTX() : fromWebP()).then(() => { envDirty = performance.now(); if (OPEN) OPEN.refreshLight(); })
     .catch((e) => console.warn('light maps failed to load', name, e)));
   A.arr = { tex, files, grey: !!useK, load };
   if (!/^E/.test(name)) load();            // the empty-room light waits until it is needed
@@ -267,12 +270,12 @@ function lightSet(A, tag, name) {
   const u = { [`l${tag}A`]: { value: arr.tex }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
   const decl = `uniform sampler2DArray l${tag}A; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
   const at = (i) => `lmDecode(texture(l${tag}A, vec3(q, ${i}.0)).rgb)`;
-  const body = `vec3 E${tag} = uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)};
+  const body = `vec3 E${tag} = dk * (uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)});
           ${arr.grey
     ? arr.files.slice(3).map((f, s) => (f ? `E${tag} += ${at(3 + s)}.r * u${tag}LampW[${s}];` : '')).join('\n          ')
     : Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
-  const fn = `vec3 lm${tag}(vec2 q) { ${body}\n          return E${tag}; }`;
-  return { u, decl, fn, sum: `vec3 E${tag} = lm${tag}(q);`, NL };
+  const fn = `vec3 lm${tag}(vec2 q, float dk) { ${body}\n          return E${tag}; }`;   // dk: the room's daylight (curtains)
+  return { u, decl, fn, sum: `vec3 E${tag} = lm${tag}(q, dk);`, NL };
 }
 // reflections fitted to the room you are in: the probe's directions are traced to the room's walls (box projection),
 // so the floor and the oak reflect the window and the lamps where they really are
@@ -283,6 +286,12 @@ const ENV_PARS = THREE.ShaderChunk.envmap_physical_pars_fragment.replace(
 // Moved furniture: where a piece stood, the shell, the built-ins and the rugs take the "empty room" bake; where it
 // stands now, the floor gets the piece's own baked shadow, read where it used to stand (the floor's lightmap is a
 // plain top view of the plan, so a point of the plan maps to it directly). Pieces that stay keep their exact bake.
+// the daylight of each room rectangle, lowered where the sheers are drawn (js/openings.js)
+const U_DAYK = { value: Array.from({ length: Math.ceil(RECTS.length / 4) }, () => new THREE.Vector4(1, 1, 1, 1)) };
+function setDayK(byRoom) {
+  RECTS.forEach((q, i) => U_DAYK.value[i >> 2].setComponent(i & 3, byRoom[q.r] ?? 1));
+  envDirty = performance.now() + 1000;
+}
 const NMOV = 12;   // moved pieces the light follows (more than that: the first twelve)
 const U_MOV = {
   a: { value: Array.from({ length: NMOV }, () => new THREE.Vector4()) },   // where it stood: centre x, y, half width, half depth
@@ -304,10 +313,11 @@ function lightmapped(mat, atlas) {
   // the empty-room bake covers the shell and the rugs, and (when the bake has them, "builtins") what stays put in the rooms
   const empty = EA && (atlas === 'S' || mat.userData.rug || (mat.userData.still && EA.builtins)) ? lightSet(EA, 'E', 'E' + atlas) : null;
   const floorLM = !!mat.userData.floorLM && !!empty;
+  const sheer = /sheer/i.test(mat.name);
   mat.lightMap = BLACK; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
   mat.userData.atlas = atlas;
   mat.userData.uPiece = mat.userData.uPiece || { value: 1 };       // a moved piece of furniture takes the light of where it now stands
-  const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri, rects = wall;
+  const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri, rects = true;   // rooms: wall paint, daylight behind curtains
   mat.onBeforeCompile = function (sh) {
     const ud = this.userData;
     Object.assign(sh.uniforms, full.u, empty ? empty.u : {}, {
@@ -315,13 +325,25 @@ function lightmapped(mat, atlas) {
       uTint: ud.uTint || { value: new THREE.Color(1, 1, 1) }, uTintAmt: ud.uTintAmt || { value: 0 },
       uBoxMin: U_BOX.min, uBoxMax: U_BOX.max, uBoxPos: U_BOX.pos, uBoxOn: U_BOX.on,
     });
-    if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A } });
+    if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A }, uRectK: U_DAYK });
+    if (sheer) Object.assign(sh.uniforms, { uTime: U.time, uSheer: U.sheer });
+    const door = !!ud.uDoor;
+    if (door) Object.assign(sh.uniforms, { uDoor: ud.uDoor, uDoorT: ud.uDoorT });
     if (empty) Object.assign(sh.uniforms, { uMovA: U_MOV.a, uMovB: U_MOV.b, uMovC: U_MOV.c, uMovN: U_MOV.n, uFloorLM: U_MOV.floor, uRugs: U_MOV.rugs });
     if (wall) Object.assign(sh.uniforms, { uWallCol: ud.uWallCol, uWallBase: ud.uWallBase });
     if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint, uGrout: ud.uGrout || { value: new THREE.Vector3() }, uRelief: U.relief });
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
+    // a breeze: a slow ripple, still at the rail and freest at the hem, with gusts
+    if (sheer) sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        { vec4 bw = modelMatrix * vec4(transformed, 1.0);
+          float hang = clamp((2.35 - bw.y) / 2.2, 0.0, 1.0); hang *= hang;
+          float gust = 0.55 + 0.45 * sin(uTime * 0.37) * sin(uTime * 0.23 + 1.7);
+          float wv = sin(uTime * 1.6 + bw.x * 3.1 - bw.z * 2.7) + 0.5 * sin(uTime * 2.7 + bw.x * 5.3 + bw.z * 4.1);
+          transformed += objectNormal * (0.028 * hang * gust * wv); }`);
     let fs = sh.fragmentShader
       .replace('#include <envmap_physical_pars_fragment>', ENV_PARS)
       .replace('#include <common>', `#include <common>
@@ -334,7 +356,7 @@ function lightmapped(mat, atlas) {
           if (uBoxOn < 0.5 || any(lessThan(vWP, uBoxMin - 0.02)) || any(greaterThan(vWP, uBoxMax + 0.02))) return v;
           vec3 a = (uBoxMax - vWP) / v, b = (uBoxMin - vWP) / v, f = max(a, b);
           return vWP + v * min(min(f.x, f.y), f.z) - uBoxPos; }
-        ${rects ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}];
+        ${rects ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}]; uniform vec4 uRectK[${Math.ceil(NR / 4)}];
         // which room rectangle this side of a surface is in (a step along the normal, into the room)
         int rectOf() { vec3 qp = vWP + normalize(vWN) * 0.08; vec2 pl = vec2(qp.x, -qp.z); int ri = -1;
           for (int i = 0; i < ${NR}; i++) { vec4 r = uRects[i]; if (pl.x >= r.x && pl.x <= r.y && pl.y >= r.z && pl.y <= r.w) ri = i; }
@@ -358,7 +380,9 @@ function lightmapped(mat, atlas) {
         }` : ''}
         vec3 lmDecode(vec3 t) { return pow(t, vec3(2.2)); }
         ${full.fn}
-        ${empty ? empty.fn + '\n        ' + MOV_GLSL : ''}`)
+        ${empty ? empty.fn + '\n        ' + MOV_GLSL : ''}
+        ${sheer ? 'uniform float uSheer;' : ''}
+        ${door ? 'uniform vec4 uDoor; uniform float uDoorT;' : ''}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         { float l = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
           diffuseColor.rgb = mix(diffuseColor.rgb, uTint * (0.35 + 1.3 * l), uTintAmt); }
@@ -370,6 +394,7 @@ function lightmapped(mat, atlas) {
           diffuseColor.rgb *= c; }` : ''}`)
       .replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
         { vec2 q = vLightMapUv;
+          float dk = 1.0; { int ri = rectOf(); if (ri >= 0) dk = uRectK[ri / 4][ri % 4]; }
           // all interior light is baked: drop the live lights (they only light the world outside)
           irradiance = vec3(0.0); reflectedLight.directDiffuse = vec3(0.0); reflectedLight.directSpecular = vec3(0.0);
           // the reflection probe gives reflections only: its diffuse part would light the room a second time on top of the bake
@@ -389,13 +414,17 @@ function lightmapped(mat, atlas) {
               float w = movW(l, uMovA[i].zw, 0.0, 1.0); if (w <= 0.0) continue;
               vec2 p0 = uMovA[i].xy + l, q0 = vec2(p0.x * uFloorLM.x + uFloorLM.y, p0.y * uFloorLM.z + uFloorLM.w);
               const vec3 LUM = vec3(0.2126, 0.7152, 0.0722);   // one ratio for all three colours: no coloured specks
-              vec3 r = vec3(clamp(dot(lmF(q0), LUM) / max(dot(lmE(q0), LUM), 1e-4), 0.25, 1.0));   // the piece's shadow where it stood
+              vec3 r = vec3(clamp(dot(lmF(q0, dk), LUM) / max(dot(lmE(q0, dk), LUM), 1e-4), 0.25, 1.0));   // the piece's shadow where it stood
               // …except where a rug lay over the floor in the bake (dark under the rug, not shadow): a soft contact shadow there
               vec2 dd = abs(l) - uMovA[i].zw; float soft = mix(0.5, 1.0, smoothstep(-0.08, 0.3, max(dd.x, dd.y)));
               r = mix(r, vec3(soft), underRug(p0));
               E *= mix(vec3(1.0), r, w); }` : ''} }` : ''}
           E += vec3(uFlat);
           ${planar ? 'E *= relief;' : ''}
+          ${sheer ? 'E += vec3(uSheer) * dk;   // lit from behind by the window' : ''}
+          ${door ? `{ // a door leaf swung shut: each face takes the light of the floor on its side
+            float side = dot(normalize(vec2(vWN.x, -vWN.z)), uDoor.xy);
+            E = mix(E, vec3(side > 0.0 ? uDoor.z : uDoor.w), uDoorT * smoothstep(0.2, 0.6, abs(side))); }` : ''}
           irradiance += E * uGrade * uGain * uPiece * PI; }`);
     if (planar) fs = fs
       .replace(/#include <map_fragment>/, `
@@ -446,7 +475,7 @@ function lightmapped(mat, atlas) {
         #endif`);
     sh.fragmentShader = fs;
   };
-  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '') + (floorLM ? 'F' : '');
+  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '') + (floorLM ? 'F' : '') + (sheer ? 'S' : '');
   mat.needsUpdate = true;
 }
 
@@ -468,7 +497,7 @@ let ceilings = [], world = null, sky = null, CEIL_H = 2.7;
 const parts = {};                   // atlas → loaded group
 const meshes = [];                  // every interior mesh (for picking)
 const floorMeshes = [];             // the floors of the shell (for the light under a moved piece)
-let PIECE_DEFS = {}, FURN = null, pendingLayout = '', furnReady = false;
+let PIECE_DEFS = {}, FURN = null, pendingLayout = '', furnReady = false, OPEN = null, pendingOpen = '';
 const outside = { hemi: null, sun: null };
 let envCam = null, pmrem = null, envRT = null, envDirty = 0;
 function refreshEnv() {
@@ -485,6 +514,7 @@ function applyLight() {
   const t = state.time, i0 = Math.floor(Math.min(t, 2.999)), f = t - i0, a = TIMES[i0], b = TIMES[Math.min(3, i0 + 1)];
   const mix = (x, y) => x + (y - x) * f;
   U.dayW.value.set(mix(a.day[0], b.day[0]), mix(a.day[1], b.day[1]), mix(a.day[2], b.day[2]));
+  U.sheer.value = 0.45 * U.dayW.value.x + 0.7 * U.dayW.value.y + 0.06 * U.dayW.value.z;
   // the eye adapts: dim scenes (the 5% night path, the film glow) get a little more exposure, as they would in the room
   const ADAPT = { night: 2.2, film: 0.7, view: 0.6, bedtime: 0.4 };
   const adapt = t >= 1.6 ? ADAPT[state.scene] || 0 : 0;
@@ -521,6 +551,7 @@ function applyLight() {
   }
   if (world) world.group.traverse((o) => { if (o.isInstancedMesh && o.material.userData.nightGlow) o.material.userData.nightGlow.value = THREE.MathUtils.smoothstep(t, 1.6, 2.2); });
   envDirty = performance.now() + 180;
+  if (OPEN) OPEN.refreshLight();
   saveHash(); updateUI();
 }
 
@@ -622,6 +653,9 @@ function prepare(root, atlas) {
         mm.emissiveIntensity = mm.emissiveIntensity || 1;
         if (ud.circuit) emissive.push({ mat: mm, circuit: ud.circuit, base: mm.emissiveIntensity || 1 });
       }
+      // glTF's default is fully metallic: Blender wrote no metalness for the linen, the paper shades and a few parts,
+      // which then had no diffuse light at all. Only what is named as metal stays metal.
+      if (mm.metalness > 0.5 && !mm.metalnessMap && !/steel|mirror|chrome|brass|metal|alumin/i.test(m.name)) mm.metalness = 0;
       if (/^(Glass|Balustrade glass)/.test(m.name)) { mm.transparent = true; mm.opacity = /^Bal/.test(m.name) ? 0.2 : 0.12; mm.depthWrite = false; mm.metalness = 0; mm.roughness = 0.05; }
       if (/^Mirror/.test(m.name)) { mm.metalness = 1; mm.roughness = 0.04; mm.color.set(0xd8d8d8); }
       if (/^Linen sheer/.test(m.name)) { mm.transparent = true; mm.opacity = 0.82; mm.side = THREE.DoubleSide; }
@@ -642,6 +676,7 @@ function loadPart(atlas, onProgress) {
     .then((gltf) => {
       prepare(gltf.scene, atlas); scene.add(gltf.scene); parts[atlas] = gltf.scene;
       if (atlas === 'S') fitFloorLM();
+      if (OPEN) { const list = []; gltf.scene.traverse((o) => { if (o.isMesh) list.push(o); }); OPEN.addMeshes(list); OPEN.load(pendingOpen); }
       if (FURN && atlas !== 'S') { const list = []; gltf.scene.traverse((o) => { if (o.isMesh) list.push(o); }); FURN.addMeshes(list); }
       return gltf.scene;
     });
@@ -659,6 +694,8 @@ async function init() {
   try { PIECE_DEFS = Object.fromEntries((await (await fetch(vurl(BASE + 'pieces.json'))).json()).map((d) => [d.id, d])); } catch (e) { console.warn('no furniture pieces'); }
   Object.values(PIECE_DEFS).filter((d) => d.rug && /rug|runner/i.test(d.name)).slice(0, 8).forEach((d, i) => U_MOV.rugs.value[i].set(d.cx, d.cy, d.w / 2, d.d / 2));
   FURN = createFurniture(furnitureCtx());
+  OPEN = createOpenings({ scene, DATA, setDayK, onChange: () => saveHash(), floorLight: (x, y) => sampleLight(x, y, 'S'),
+    cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData }; c.onBeforeCompile = m.onBeforeCompile; return c; } });
   const order = (MANIFEST.order || Object.keys(MANIFEST.atlases)).filter((a) => MANIFEST.atlases[a]?.glb);
   const first = order.filter((a) => a !== 'R'), later = order.filter((a) => a === 'R');
   const prog = Object.fromEntries(first.map((a) => [a, 0]));
@@ -699,11 +736,11 @@ async function init() {
 // ------------------------------------------------------------------ what the furniture editor needs from the page
 const lmPixels = (file) => lumCache[file] || null;   // made when the maps load (lmArray)
 const downRay = new THREE.Raycaster();
-function sampleLight(px, py) {
+function sampleLight(px, py, atlas) {
   downRay.set(V(px, 1.2, -py), V(0, -1, 0)); downRay.far = 2;
   const h = downRay.intersectObjects(floorMeshes, false)[0];
   if (!h || !h.uv1) return 0;
-  const A = MANIFEST.atlases.ES || MANIFEST.atlases.S;     // the empty room: no furniture shadow under the piece itself
+  const A = MANIFEST.atlases[atlas || 'ES'] || MANIFEST.atlases.S;     // the empty room: no furniture shadow under the piece itself
   const at = (file) => { const d = lmPixels(file); if (!d) return null; const x = Math.min(255, Math.max(0, Math.floor(h.uv1.x * 256))), y = Math.min(255, Math.max(0, Math.floor(h.uv1.y * 256))); const i = (y * 256 + x) * 4; return [d[i], d[i + 1], d[i + 2]].map((v) => Math.pow(v / 255, 2.2)); };
   let E = [0, 0, 0];
   MANIFEST.day.forEach((g, k) => { const m = A.maps[g]; const t = m && at(m.file); if (t) E = E.map((e, c) => e + U.dayW.value.getComponent(k) * m.scale * t[c]); });
@@ -865,6 +902,8 @@ function saveHash() {
     if (p.length) h.set('p', p.join(';'));
     const lay = furnReady && FURN ? FURN.serialize() : pendingLayout;
     if (lay) h.set('m', lay);
+    const op = OPEN ? OPEN.serialize() : pendingOpen;
+    if (op) h.set('o', op);
     history.replaceState(null, '', '#' + h.toString());
   }, 250);
 }
@@ -878,6 +917,7 @@ function readHash() {
     for (const kv of list.split(',')) { const [s, id] = kv.split('.'); const c = LONG[s]; if (c && SAMPLES[c].items.some((i) => i.id === id)) state.picks[a][c] = id; }
   }
   pendingLayout = h.get('m') || '';
+  pendingOpen = h.get('o') || '';
   const e = (h.get('e') || '').split(',').map(Number);
   if (e.length === 5 && e.every(Number.isFinite)) {
     out.view = 'living';
@@ -1122,6 +1162,7 @@ let hoverT = 0;
 function onCanvasHover(e) {
   if (!eye.on || drag || look || (FURN && (FURN.editing || FURN.dragging))) { if (marker) marker.visible = false; return; }
   const now = performance.now(); if (now - hoverT < 90) return; hoverT = now;
+  if (openingAt(e.clientX, e.clientY)) { if (marker) marker.visible = false; canvas.style.cursor = 'pointer'; return; }
   const h = pick(e.clientX, e.clientY);
   const ok = h && h.face && h.face.normal.clone().transformDirection(h.object.matrixWorld).y > 0.7 && h.point.y < 0.6 && inFlat(h.point.x, h.point.z);
   marker.visible = !!ok;
@@ -1143,11 +1184,21 @@ function onCanvasDown(e) {
   const up = (ev) => {
     canvas.removeEventListener('pointermove', mv);
     const l = look; look = null;
-    if (!l.moved) clickWalk(ev.clientX, ev.clientY);
+    if (!l.moved && !clickOpening(ev.clientX, ev.clientY)) clickWalk(ev.clientX, ev.clientY);
   };
   canvas.addEventListener('pointermove', mv);
   canvas.addEventListener('pointerup', up, { once: true });
 }
+// a door or a curtain under the pointer (the sheers are see-through, so they are tested on their own)
+function openingAt(x, y) {
+  if (!OPEN) return null;
+  const r = canvas.getBoundingClientRect(); ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera); ray.far = 12;
+  const h = ray.intersectObjects(meshes, false).find((q) => visibleDeep(q.object) && (!q.object.material.transparent || OPEN.isOpening(q)));
+  return h && OPEN.isOpening(h) ? h : null;
+}
+function clickOpening(x, y) { const h = openingAt(x, y); return h ? OPEN.click(h) : false; }
+let openWasBusy = false;
 function clickWalk(x, y) {
   const h = pick(x, y); if (!h) return;
   const n = h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : V(0, 1, 0);
@@ -1223,6 +1274,9 @@ const easeWalk = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  U.time.value = now / 1000;
+  if (OPEN && OPEN.step(now) === false && openWasBusy) envDirty = now + 200;   // doors and curtains in motion
+  openWasBusy = !!(OPEN && OPEN.busy);
   if (tween) {
     const k = Math.min(1, (now - tween.t0) / tween.dur);
     if (tween.walk) {
@@ -1264,4 +1318,5 @@ function frame(now) {
 let framesOn = false;
 function startFrames() { if (!framesOn) { framesOn = true; requestAnimationFrame(frame); } }
 init().then(startFrames).catch((e) => { console.error(e); $('#veil .veil__en').textContent = 'Could not load the flat: ' + e.message; });
-window.__mood = { get FURN() { return FURN; }, state, applyLight, applySample, applyMood, setView, walkTo, enterEye, V, scene, camera, renderer, U, eye, parts, openBoard, get MANIFEST() { return MANIFEST; } };
+window.__mood = { get FURN() { return FURN; }, get OPEN() { return OPEN; }, sampleLight, lumCache, floorMeshes,
+  floorProbe: (px, py) => { downRay.set(V(px, 1.2, -py), V(0, -1, 0)); downRay.far = 2; const h = downRay.intersectObjects(floorMeshes, false)[0]; return h ? { src: h.object.userData.src, uv1: h.uv1 && [h.uv1.x, h.uv1.y], fit: [px * U_MOV.floor.value.x + U_MOV.floor.value.y, py * U_MOV.floor.value.z + U_MOV.floor.value.w] } : null; }, state, applyLight, applySample, applyMood, setView, walkTo, enterEye, V, scene, camera, renderer, U, eye, parts, openBoard, get MANIFEST() { return MANIFEST; } };
