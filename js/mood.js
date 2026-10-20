@@ -9,6 +9,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
+import { createFurniture } from './furniture.js';
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -33,7 +34,7 @@ const ROOM_AREA = {}; for (const [a, d] of Object.entries(AREAS)) for (const r o
 const inRect = ([x0, x1, y0, y1], x, y, m = 0) => x >= x0 - m && x <= x1 + m && y >= y0 - m && y <= y1 + m;
 function roomAt(px, py, m = 0) { for (const r of DATA.rooms) if (r.id && r.id !== 'landing' && r.rects.some((q) => inRect(q, px, py, m))) return r.id; return ''; }
 // every room rectangle with its area index, for the wall-paint lookup in the shader
-const RECTS = []; for (const r of DATA.rooms) if (ROOM_AREA[r.id]) for (const q of r.rects) RECTS.push({ q, a: AREA_KEYS.indexOf(ROOM_AREA[r.id]) });
+const RECTS = []; for (const r of DATA.rooms) if (ROOM_AREA[r.id]) for (const q of r.rects) RECTS.push({ q, a: AREA_KEYS.indexOf(ROOM_AREA[r.id]), r: r.id });
 
 // ------------------------------------------------------------------ the lighting plan (design/lighting.json)
 let SCENES = { off: { he: 'כבוי', en: 'Off', levels: {} } };
@@ -155,35 +156,56 @@ const NA = AREA_KEYS.length, NR = RECTS.length;
 const RECT_U = RECTS.map(({ q }) => new THREE.Vector4(q[0], q[1], q[2], q[3]));
 const RECT_A = RECTS.map(({ a }) => a);
 
-function lightmapped(mat, atlas) {
-  const A = MANIFEST.atlases[atlas];
+// the light of one atlas, as GLSL: declarations, uniforms and the sum E of its day and lamp maps
+function lightSet(A, tag) {
   const files = lampFiles(A), NL = Math.max(1, files.length);
   A.lampW = A.lampW || Array.from({ length: NL * 3 }, () => new THREE.Vector3());
   const day = MANIFEST.day.map((g) => (A.maps[g] ? loadLM(A.maps[g].file) : BLACK));
   const dayS = new THREE.Vector3(...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].scale : 0)));
   const lamps = Array.from({ length: NL }, (_, i) => (files[i] ? loadLM(files[i]) : BLACK));
-  mat.lightMap = day[0]; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
+  const u = { [`l${tag}D0`]: { value: day[0] }, [`l${tag}D1`]: { value: day[1] }, [`l${tag}D2`]: { value: day[2] }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
+  lamps.forEach((t, i) => { u[`l${tag}L${i}`] = { value: t }; });
+  const decl = `uniform sampler2D l${tag}D0, l${tag}D1, l${tag}D2, ${lamps.map((_, i) => `l${tag}L${i}`).join(', ')}; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
+  const sum = `vec3 E${tag} = uDayW.x * l${tag}DS.x * lmDecode(texture2D(l${tag}D0, q).rgb) + uDayW.y * l${tag}DS.y * lmDecode(texture2D(l${tag}D1, q).rgb) + uDayW.z * l${tag}DS.z * lmDecode(texture2D(l${tag}D2, q).rgb);
+          ${lamps.map((_, i) => `{ vec3 t = lmDecode(texture2D(l${tag}L${i}, q).rgb); E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
+  return { u, decl, sum, first: day[0], NL };
+}
+// rooms whose furniture was rearranged switch their shell (and rugs) to the "empty room" bake: one flag per room rectangle
+const U_EMPTY = { value: new Float32Array(NR) };
+
+function lightmapped(mat, atlas) {
+  const A = MANIFEST.atlases[atlas];
+  const full = lightSet(A, 'F');
+  const EA = MANIFEST.atlases['E' + atlas];
+  const empty = EA && (atlas === 'S' || mat.userData.rug) ? lightSet(EA, 'E') : null;
+  mat.lightMap = full.first; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
   mat.userData.atlas = atlas;
-  const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri;
-  mat.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, {
-      lmD0: { value: day[0] }, lmD1: { value: day[1] }, lmD2: { value: day[2] }, lmDS: { value: dayS },
-      uDayW: U.dayW, uLampW: { value: A.lampW }, uGain: U.gain, uGrade: U.grade, uFlat: { value: Object.keys(A.maps).length ? 0 : FLAT },
-      uTint: mat.userData.uTint || { value: new THREE.Color(1, 1, 1) }, uTintAmt: mat.userData.uTintAmt || { value: 0 },
+  mat.userData.uPiece = mat.userData.uPiece || { value: 1 };       // a moved piece of furniture takes the light of where it now stands
+  const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri, rects = wall || !!empty;
+  mat.onBeforeCompile = function (sh) {
+    const ud = this.userData;
+    Object.assign(sh.uniforms, full.u, empty ? empty.u : {}, {
+      uDayW: U.dayW, uGain: U.gain, uGrade: U.grade, uFlat: { value: Object.keys(A.maps).length ? 0 : FLAT }, uPiece: ud.uPiece,
+      uTint: ud.uTint || { value: new THREE.Color(1, 1, 1) }, uTintAmt: ud.uTintAmt || { value: 0 },
     });
-    lamps.forEach((t, i) => { sh.uniforms['lmL' + i] = { value: t }; });
-    if (wall) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A }, uWallCol: mat.userData.uWallCol, uWallBase: mat.userData.uWallBase });
-    if (planar) Object.assign(sh.uniforms, { uTri: mat.userData.uTri, uTriRot: mat.userData.uTriRot, uTexAdj: mat.userData.uTexAdj, uTexTint: mat.userData.uTexTint });
+    if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A }, uRectE: U_EMPTY });
+    if (wall) Object.assign(sh.uniforms, { uWallCol: ud.uWallCol, uWallBase: ud.uWallBase });
+    if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint });
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
-    const lampSum = lamps.map((_, i) => `{ vec3 t = lmDecode(texture2D(lmL${i}, q).rgb); E += t.r * uLampW[${3 * i}] + t.g * uLampW[${3 * i + 1}] + t.b * uLampW[${3 * i + 2}]; }`).join('\n');
     let fs = sh.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec3 vWP; varying vec3 vWN;
-        uniform sampler2D lmD0, lmD1, lmD2, ${lamps.map((_, i) => 'lmL' + i).join(', ')}; uniform vec3 lmDS, uDayW; uniform vec3 uLampW[${NL * 3}]; uniform float uGain, uFlat; uniform vec3 uGrade;
+        ${full.decl} ${empty ? empty.decl : ''}
+        uniform vec3 uDayW; uniform float uGain, uFlat, uPiece; uniform vec3 uGrade;
         uniform vec3 uTint; uniform float uTintAmt;
-        ${wall ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}]; uniform vec3 uWallCol[${NA}]; uniform vec3 uWallBase;` : ''}
+        ${rects ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}]; uniform float uRectE[${NR}];
+        // which room rectangle this side of a surface is in (a step along the normal, into the room)
+        int rectOf() { vec3 qp = vWP + normalize(vWN) * 0.08; vec2 pl = vec2(qp.x, -qp.z); int ri = -1;
+          for (int i = 0; i < ${NR}; i++) { vec4 r = uRects[i]; if (pl.x >= r.x && pl.x <= r.y && pl.y >= r.z && pl.y <= r.w) ri = i; }
+          return ri; }` : ''}
+        ${wall ? `uniform vec3 uWallCol[${NA}]; uniform vec3 uWallBase;` : ''}
         ${planar ? `uniform vec4 uTri; uniform float uTriRot; uniform vec2 uTexAdj; uniform vec3 uTexTint;
         // Blender's object-space texture mapping, which glTF cannot carry: flat (floors) or box (wood, fabric)
         vec4 triTex(sampler2D t, vec2 uv) {
@@ -202,9 +224,9 @@ function lightmapped(mat, atlas) {
       .replace('#include <color_fragment>', `#include <color_fragment>
         { float l = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
           diffuseColor.rgb = mix(diffuseColor.rgb, uTint * (0.35 + 1.3 * l), uTintAmt); }
-        ${wall ? `{ // wall paint per area: which room is this side of the wall in (a step along the normal, into the room)
-          vec3 qp = vWP + normalize(vWN) * 0.08; vec2 pl = vec2(qp.x, -qp.z); int a = -1;
-          for (int i = 0; i < ${NR}; i++) { vec4 r = uRects[i]; if (pl.x >= r.x && pl.x <= r.y && pl.y >= r.z && pl.y <= r.w) a = uRectA[i]; }
+        ${wall ? `{ // wall paint per area
+          int ri = rectOf(); int a = -1;
+          for (int i = 0; i < ${NR}; i++) if (i == ri) a = uRectA[i];
           vec3 c = uWallBase;
           for (int k = 0; k < ${NA}; k++) if (k == a) c = uWallCol[k];
           diffuseColor.rgb *= c; }` : ''}`)
@@ -212,10 +234,14 @@ function lightmapped(mat, atlas) {
         { vec2 q = vLightMapUv;
           // all interior light is baked: drop the live lights (they only light the world outside)
           irradiance = vec3(0.0); reflectedLight.directDiffuse = vec3(0.0); reflectedLight.directSpecular = vec3(0.0);
-          vec3 E = uDayW.x * lmDS.x * lmDecode(texture2D(lmD0, q).rgb) + uDayW.y * lmDS.y * lmDecode(texture2D(lmD1, q).rgb) + uDayW.z * lmDS.z * lmDecode(texture2D(lmD2, q).rgb);
-          ${lampSum}
+          ${full.sum}
+          vec3 E = EF;
+          ${empty ? `{ ${empty.sum}
+            int ri = rectOf(); float e = 0.0;
+            for (int i = 0; i < ${NR}; i++) if (i == ri) e = uRectE[i];
+            E = mix(EF, EE, e); }` : ''}
           E += vec3(uFlat);
-          irradiance += E * uGrade * uGain * PI; }`);
+          irradiance += E * uGrade * uGain * uPiece * PI; }`);
     if (planar) fs = fs
       .replace(/#include <map_fragment>/, `
         #ifdef USE_MAP
@@ -229,7 +255,7 @@ function lightmapped(mat, atlas) {
         #endif`);
     sh.fragmentShader = fs;
   };
-  mat.customProgramCacheKey = () => 'lm' + atlas + NL + (wall ? 'W' : '') + (planar ? 'P' : '');
+  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '');
   mat.needsUpdate = true;
 }
 
@@ -250,6 +276,8 @@ const emissive = [];                // { mat, circuit, base, paper }
 let ceilings = [], world = null, sky = null;
 const parts = {};                   // atlas → loaded group
 const meshes = [];                  // every interior mesh (for picking)
+const floorMeshes = [];             // the floors of the shell (for the light under a moved piece)
+let PIECE_DEFS = {}, FURN = null, pendingLayout = '', furnReady = false;
 const outside = { hemi: null, sun: null };
 let envCam = null, pmrem = null, envRT = null, envDirty = 0;
 function refreshEnv() {
@@ -352,18 +380,21 @@ function prepare(root, atlas) {
   root.traverse((o) => {
     if (!o.isMesh) return;
     const ud = { ...(o.parent?.userData || {}), ...o.userData };
-    const src = ud.src || o.name, room = ud.room || '', area = ROOM_AREA[room] || '';
+    const src = ud.src || o.name, room = ud.room || '';
+    // the one floor of the flat carries its styling area in the material name ("Tile ivory 60x60~living@S")
+    const area = (o.material.name.match(/~([a-z]+)@/) || [])[1] || ROOM_AREA[room] || '';
+    const pdef = ud.piece ? PIECE_DEFS[ud.piece] : null, rug = !!(pdef && pdef.rug && pdef.movable);
     const cat = categoryOf(src);
     let m = o.material;
     const paper = /^(Washi|Rice paper|VIDJA shade)/.test(m.name);
     const fam = paper ? (src.match(/^(Pendant kitchen|Pendant living|VIDJA|HOLMO|KUDDLAVA)/) || [''])[0] : '';
     // meshes in a swappable category get their own material per area (so a sample changes only that room)
-    const key = m.uuid + (cat && cat !== 'walls' ? cat + area : cat || '') + fam;
+    const key = m.uuid + (cat && cat !== 'walls' ? cat + area : cat || '') + fam + (rug ? 'rug' : '');
     if (!matCopies.has(key)) {
       const mm = m.clone(); mm.userData.orig = { map: m.map, normalMap: m.normalMap, roughnessMap: m.roughnessMap, color: m.color.clone() };
       mm.userData.uTint = { value: new THREE.Color(1, 1, 1) }; mm.userData.uTintAmt = { value: 0 };
       // textures Blender mapped by object coordinates: reproduce that mapping and the colour adjustments
-      const tm = TEXMAP[m.name.replace(/@[A-Z]$/, '').replace(/\.\d{3}$/, '')];
+      const tm = TEXMAP[m.name.replace(/@[A-Z]$/, '').replace(/~[a-z]+$/, '').replace(/\.\d{3}$/, '')];
       if (tm || cat === 'floor') {
         const tri = new THREE.Vector4(tm ? (tm.mode === 'flat' ? 1 : 2) : 0, tm ? tm.k : 1, tm?.off?.[0] || 0, tm?.off?.[1] || 0);
         const adj = new THREE.Vector2(tm?.value ?? 1, tm?.sat ?? 1), tint = new THREE.Vector3(...(tm?.tint || [1, 1, 1]));
@@ -376,6 +407,7 @@ function prepare(root, atlas) {
         mm.userData.uWallCol = { value: AREA_KEYS.map(() => m.color.clone()) };
         mm.color.set(0xffffff); wallMats.push(mm);
       }
+      mm.userData.rug = rug;
       lightmapped(mm, atlas);
       if (paper) {
         // paper shades glow from the lamp inside them: which circuit depends on the fitting
@@ -393,15 +425,20 @@ function prepare(root, atlas) {
       if (cat && cat !== 'walls' && area) (byCatArea[`${cat}:${area}`] ||= []).push(mm);
     }
     o.material = matCopies.get(key);
-    o.userData.category = cat; o.userData.area = area; o.userData.src = src;
+    o.userData.category = cat; o.userData.area = area; o.userData.src = src; o.userData.piece = ud.piece || null;
     meshes.push(o);
+    if (atlas === 'S' && /^Floor /.test(src)) floorMeshes.push(o);
     if (/^Ceiling/.test(src)) { ceilings.push(o); o.visible = viewKey !== 'overview'; }
   });
 }
 function loadPart(atlas, onProgress) {
   const A = MANIFEST.atlases[atlas];
   return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(BASE + A.glb, (e) => onProgress && e.total && onProgress(e.loaded / e.total))
-    .then((gltf) => { prepare(gltf.scene, atlas); scene.add(gltf.scene); parts[atlas] = gltf.scene; return gltf.scene; });
+    .then((gltf) => {
+      prepare(gltf.scene, atlas); scene.add(gltf.scene); parts[atlas] = gltf.scene;
+      if (FURN && atlas !== 'S') { const list = []; gltf.scene.traverse((o) => { if (o.isMesh) list.push(o); }); FURN.addMeshes(list); }
+      return gltf.scene;
+    });
 }
 
 async function init() {
@@ -413,7 +450,9 @@ async function init() {
     for (const s of L.scenes) SCENES[s.id] = { he: s.he, en: s.name, levels: s.levels, text: s.text };
     for (const [k, c] of Object.entries(L.circuits)) CCT[k] = c.cct;
   } catch (e) { console.warn('lighting plan not found', e); }
-  const order = MANIFEST.order || Object.keys(MANIFEST.atlases);
+  try { PIECE_DEFS = Object.fromEntries((await (await fetch(BASE + 'pieces.json')).json()).map((d) => [d.id, d])); } catch (e) { console.warn('no furniture pieces'); }
+  FURN = createFurniture(furnitureCtx());
+  const order = (MANIFEST.order || Object.keys(MANIFEST.atlases)).filter((a) => MANIFEST.atlases[a]?.glb);
   const first = order.filter((a) => a !== 'R'), later = order.filter((a) => a === 'R');
   const prog = Object.fromEntries(first.map((a) => [a, 0]));
   const veilP = $('#veil .veil__p');
@@ -435,6 +474,7 @@ async function init() {
   setView(h.view && VIEWS[h.view] ? h.view : 'overview', true);
   if (h.eye) { enterEye(h.eye.pos, h.eye.look, true); }
   applyPicks(); applyLight();
+  if (!later.length) { if (pendingLayout) FURN.load(pendingLayout); furnReady = true; }
   document.getElementById('veil').classList.add('is-gone');
   // the bedrooms follow in the background
   for (const a of later) {
@@ -442,7 +482,63 @@ async function init() {
     await loadPart(a, (p) => setBusy(true, p));
     applyPicks(); applyLight(); setBusy(false);
   }
+  if (pendingLayout) { FURN.load(pendingLayout); applyLight(); }   // a shared link's furniture, once every piece is here
+  furnReady = true;
+  if ($('#tray').dataset.cat === 'furniture') showFurniture();
 }
+
+// ------------------------------------------------------------------ what the furniture editor needs from the page
+const lumCache = {};
+function lmPixels(file) {   // a small CPU copy of a lightmap, to read the light on the floor under a piece
+  if (lumCache[file]) return lumCache[file];
+  const img = lmTex[file]?.image; if (!img || !img.width) return null;
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0, 256, 256);
+  return (lumCache[file] = g.getImageData(0, 0, 256, 256).data);
+}
+const downRay = new THREE.Raycaster();
+function sampleLight(px, py) {
+  downRay.set(V(px, 1.2, -py), V(0, -1, 0)); downRay.far = 2;
+  const h = downRay.intersectObjects(floorMeshes, false)[0];
+  if (!h || !h.uv1) return 0;
+  const A = MANIFEST.atlases.ES || MANIFEST.atlases.S;     // the empty room: no furniture shadow under the piece itself
+  const at = (file) => { const d = lmPixels(file); if (!d) return null; const x = Math.min(255, Math.max(0, Math.floor(h.uv1.x * 256))), y = Math.min(255, Math.max(0, Math.floor(h.uv1.y * 256))); const i = (y * 256 + x) * 4; return [d[i], d[i + 1], d[i + 2]].map((v) => Math.pow(v / 255, 2.2)); };
+  let E = [0, 0, 0];
+  MANIFEST.day.forEach((g, k) => { const m = A.maps[g]; const t = m && at(m.file); if (t) E = E.map((e, c) => e + U.dayW.value.getComponent(k) * m.scale * t[c]); });
+  const files = lampFiles(A);
+  for (const ch of Object.values(A.channels)) {
+    const t = at(ch.file); if (!t || !A.lampW) continue;
+    const w = A.lampW[files.indexOf(ch.file) * 3 + ch.channel]; E = E.map((e, c) => e + t[ch.channel] * w.getComponent(c));
+  }
+  return 0.2126 * E[0] + 0.7152 * E[1] + 0.0722 * E[2];
+}
+const visibleDeep = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+function furnitureCtx() {
+  return {
+    scene, camera, canvas, renderer, ROOMS, pieces: Object.values(PIECE_DEFS),
+    roomAt: (x, y) => roomAt(x, y),
+    pick: (x, y) => {
+      const r = canvas.getBoundingClientRect(); ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera); ray.far = Infinity;
+      return ray.intersectObjects(meshes, false).find((h) => visibleDeep(h.object) && !h.object.material.transparent) || null;
+    },
+    get hasEmpty() { return !!MANIFEST.atlases.ES; },
+    setEmptyRooms: (rooms) => { RECTS.forEach((q, i) => { U_EMPTY.value[i] = rooms.has(q.r) ? 1 : 0; }); envDirty = performance.now() + 300; },
+    sampleLight,
+    cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData, uPiece: { value: 1 } }; c.onBeforeCompile = m.onBeforeCompile; c.customProgramCacheKey = m.customProgramCacheKey; return c; },
+    addMeshes: (g) => g.traverse((o) => { if (o.isMesh && !meshes.includes(o) && o.material?.userData?.atlas) meshes.push(o); }),
+    removeMeshes: (g) => g.traverse((o) => { const i = meshes.indexOf(o); if (i >= 0) meshes.splice(i, 1); }),
+    onChange: () => { saveHash(); updateUI(); },
+    toast,
+    withThumbLight: (fn) => {   // catalog pictures in plain daylight
+      const d = U.dayW.value.clone(), ev = renderer.toneMappingExposure;
+      U.dayW.value.set(0, 1, 0); renderer.toneMappingExposure = Math.pow(2, 1.3);
+      try { fn(); } finally { U.dayW.value.copy(d); renderer.toneMappingExposure = ev; }
+    },
+  };
+}
+let toastT = 0;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('is-on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('is-on'), 2200); }
 function applyPicks() { for (const a of AREA_KEYS) for (const c of CATS) applySample(a, c, state.picks[a][c], true); updateUI(); }
 
 function makeSky() {
@@ -544,6 +640,8 @@ function saveHash() {
       if (diff.length) p.push(a + ':' + diff.join(','));
     }
     if (p.length) h.set('p', p.join(';'));
+    const lay = furnReady && FURN ? FURN.serialize() : pendingLayout;
+    if (lay) h.set('m', lay);
     history.replaceState(null, '', '#' + h.toString());
   }, 250);
 }
@@ -556,6 +654,7 @@ function readHash() {
     const [a, list] = part.split(':'); if (!AREAS[a] || !list) continue;
     for (const kv of list.split(',')) { const [s, id] = kv.split('.'); const c = LONG[s]; if (c && SAMPLES[c].items.some((i) => i.id === id)) state.picks[a][c] = id; }
   }
+  pendingLayout = h.get('m') || '';
   const e = (h.get('e') || '').split(',').map(Number);
   if (e.length === 5 && e.every(Number.isFinite)) {
     out.view = 'living';
@@ -661,10 +760,14 @@ function buildUI() {
   $('#everywhere').addEventListener('change', (e) => { state.everywhere = e.target.checked; });
   // samples
   const tabs = $('#sampleTabs'), tray = $('#tray');
-  tabs.innerHTML = Object.entries(SAMPLES).map(([k, c], i) => `<button class="tab${i ? '' : ' is-on'}" data-cat="${k}"><span dir="rtl">${c.he}</span> ${c.en}</button>`).join('');
+  tabs.innerHTML = Object.entries(SAMPLES).map(([k, c], i) => `<button class="tab${i ? '' : ' is-on'}" data-cat="${k}"><span dir="rtl">${c.he}</span> ${c.en}</button>`).join('')
+    + `<button class="tab" data-cat="furniture"><span dir="rtl">רהיטים</span> Furniture</button>`;
   const showCat = (k) => {
     tray.dataset.cat = k;
     tabs.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-on', b.dataset.cat === k));
+    document.body.classList.toggle('is-furnishing', k === 'furniture');
+    if (FURN) FURN.editing = k === 'furniture';
+    if (k === 'furniture') return showFurniture();
     tray.innerHTML = SAMPLES[k].items.map((it) => {
       const bg = bgOf(swatchOf(k, it));
       return `<button class="card" draggable="false" data-cat="${k}" data-id="${it.id}"><i style="${bg}"></i><b dir="rtl">${it.he}</b><span>${it.en}</span></button>`;
@@ -705,9 +808,17 @@ function buildUI() {
     catch { prompt('Copy this link:', location.href); }
     setTimeout(() => { b.classList.remove('is-done'); b.querySelector('span').textContent = 'Copy link to this room'; }, 2200);
   });
+  // furniture: pick up a piece before the orbit / look controls see the pointer
+  window.addEventListener('pointerdown', (e) => { if (e.target === canvas && FURN && FURN.onPointerDown(e)) { e.stopPropagation(); e.preventDefault(); } }, { capture: true });
+  window.addEventListener('pointerup', () => FURN && FURN.onPointerUp(), { capture: true });
+  window.addEventListener('wheel', (e) => { if (e.target === canvas && FURN && FURN.onWheel(e)) { e.stopPropagation(); e.preventDefault(); } }, { capture: true, passive: false });
+  canvas.addEventListener('pointermove', (e) => FURN && FURN.onPointerMove(e));
+  $('#furnReset').addEventListener('click', () => FURN && FURN.reset());
+  $('#furnUndo').addEventListener('click', () => FURN && FURN.undo());
   // keys: [ ] time · arrows / WASD walk · O overview · M moodboard
   window.addEventListener('keydown', (e) => {
     if (e.target.closest && e.target.closest('input, select, textarea')) return;
+    if (FURN && FURN.onKey(e)) { e.preventDefault(); return; }
     if (e.key === '[' || e.key === ']') { state.time = Math.min(3, Math.max(0, state.time + (e.key === ']' ? 0.25 : -0.25))); autoScene(); applyLight(); }
     if (e.key === 'o' || e.key === 'O') setView('overview');
     if (e.key === 'm' || e.key === 'M') openBoard(!$('#board').classList.contains('is-on'));
@@ -726,6 +837,21 @@ function buildUI() {
   canvas.addEventListener('pointerleave', () => { marker.visible = false; });
   canvas.addEventListener('dblclick', onCanvasDbl);
 }
+// the furniture tab: a catalog of every kind of piece in the flat, pictured from the model itself
+function showFurniture() {
+  const tray = $('#tray');
+  if (!FURN || !FURN.count) { tray.innerHTML = '<p class="panel__note">The furniture is still loading…</p>'; return; }
+  const list = FURN.catalog();
+  tray.innerHTML = list.map((p) => `<button class="card fcard" draggable="false" data-src="${p.id}"><i class="fthumb" data-id="${p.id}"></i><b>${p.name}</b><span>${p.art ? 'IKEA ' + FURN.fmtArt(p.art) : '&nbsp;'}</span></button>`).join('');
+  // pictures one per frame, so the panel opens at once
+  const todo = list.slice();
+  const next = () => {
+    const p = todo.shift(); if (!p || $('#tray').dataset.cat !== 'furniture') return;
+    const el = tray.querySelector(`.fthumb[data-id="${p.id}"]`); if (el) el.style.backgroundImage = `url(${FURN.thumbnail(p)})`;
+    requestAnimationFrame(next);
+  };
+  requestAnimationFrame(next);
+}
 function autoScene() { if (!state.userPickedScene) state.scene = state.time >= 1.6 ? TIMES[Math.round(state.time)].lamps || 'evening' : 'off'; }
 let timeAnim = null;
 function animateTime(i) { timeAnim = { from: state.time, to: i, t0: performance.now(), dur: 900 }; }
@@ -738,7 +864,7 @@ function updateUI() {
   const sel = $('#area'); if (sel && sel.value !== state.area) sel.value = state.area;
   const fc = document.querySelector('#tray .card[data-cat="floor"][data-id="asbuilt"] i'); if (fc) fc.setAttribute('style', bgOf(swatchOf('floor', SAMPLES.floor.items[0])));
   const picks = state.picks[state.area];
-  document.querySelectorAll('#tray .card').forEach((b) => b.classList.toggle('is-on', picks[b.dataset.cat] === b.dataset.id));
+  document.querySelectorAll('#tray .card[data-cat]').forEach((b) => b.classList.toggle('is-on', picks[b.dataset.cat] === b.dataset.id));
   const mid = moodOf(state.area);
   document.querySelectorAll('#moods button').forEach((b) => b.classList.toggle('is-on', b.dataset.m === mid));
   document.body.classList.toggle('is-dark', t >= 1.6);
@@ -751,7 +877,7 @@ const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 function pick(x, y, list = meshes) {
   const r = canvas.getBoundingClientRect(); ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera); ray.far = Infinity;
-  const hits = ray.intersectObjects(list, false).filter((h) => h.object.visible && !h.object.material.transparent);
+  const hits = ray.intersectObjects(list, false).filter((h) => visibleDeep(h.object) && !h.object.material.transparent);
   return hits[0] || null;
 }
 // which area a hit belongs to: furniture by its room, walls and floors by the side you see
@@ -769,7 +895,7 @@ function makeMarker() {
 }
 let hoverT = 0;
 function onCanvasHover(e) {
-  if (!eye.on || drag || look) { if (marker) marker.visible = false; return; }
+  if (!eye.on || drag || look || (FURN && (FURN.editing || FURN.dragging))) { if (marker) marker.visible = false; return; }
   const now = performance.now(); if (now - hoverT < 90) return; hoverT = now;
   const h = pick(e.clientX, e.clientY);
   const ok = h && h.face && h.face.normal.clone().transformDirection(h.object.matrixWorld).y > 0.7 && h.point.y < 0.6 && inFlat(h.point.x, h.point.z);
@@ -809,7 +935,7 @@ function clickWalk(x, y) {
   walkTo(p.x, p.z);
 }
 function onCanvasDbl(e) {
-  if (eye.on) return;
+  if (eye.on || (FURN && FURN.editing)) return;
   const h = pick(e.clientX, e.clientY); if (!h || !inFlat(h.point.x, h.point.z)) return;
   // step into the plan at that point, looking the way the overview camera looks
   const d = controls.target.clone().sub(camera.position); d.y = 0; d.normalize();
@@ -827,6 +953,10 @@ function hitTarget(x, y) {
 function startDrag(e) {
   const card = e.target.closest('.card'); if (!card) return;
   e.preventDefault();
+  if (card.classList.contains('fcard')) {
+    const ghost = card.cloneNode(true); ghost.classList.add('ghost'); document.body.appendChild(ghost);
+    return FURN.startCardDrag(e, card.dataset.src, ghost);
+  }
   const ghost = card.cloneNode(true); ghost.classList.add('ghost'); document.body.appendChild(ghost);
   drag = { card, ghost, cat: card.dataset.cat, id: card.dataset.id, x0: e.clientX, y0: e.clientY, moved: false, area: null, prev: null };
   moveGhost(e);
@@ -905,4 +1035,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 init().then(() => requestAnimationFrame(frame)).catch((e) => { console.error(e); $('#veil .veil__en').textContent = 'Could not load the flat: ' + e.message; });
-window.__mood = { state, applyLight, applySample, applyMood, setView, walkTo, enterEye, V, scene, camera, renderer, U, eye, parts, openBoard, get MANIFEST() { return MANIFEST; } };
+window.__mood = { get FURN() { return FURN; }, state, applyLight, applySample, applyMood, setView, walkTo, enterEye, V, scene, camera, renderer, U, eye, parts, openBoard, get MANIFEST() { return MANIFEST; } };

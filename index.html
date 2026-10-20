@@ -30,7 +30,12 @@
     <div class="panel__title"><span dir="rtl">דוגמאות</span> Samples</div>
     <div class="tabs" id="sampleTabs"></div>
     <div class="tray" id="tray"></div>
-    <p class="panel__note">Drag a sample onto a wall, floor or piece of furniture in any room, or click it to style the room you are in.</p>
+    <p class="panel__note only-samples">Drag a sample onto a wall, floor or piece of furniture in any room, or click it to style the room you are in.</p>
+    <div class="furnbar only-furn">
+      <button class="cmpbtn" id="furnUndo" type="button"><b dir="rtl">ביטול</b><span>Undo · Ctrl Z</span></button>
+      <button class="cmpbtn" id="furnReset" type="button"><b dir="rtl">כמו בתכנון</b><span>Reset furniture</span></button>
+    </div>
+    <p class="panel__note only-furn">Drag a piece into the room, or click it to put it in front of you. Pick up any piece to move it; scroll while holding it to turn it. It snaps to a 10&nbsp;cm grid and to the walls.</p>
   </aside>
 
   <aside class="panel panel--light" dir="ltr" aria-label="Light">
@@ -50,6 +55,14 @@
     </div>
     <p class="panel__note">Drag to look · click the floor to walk · arrows / WASD · [ ] time · O overview · M moodboard</p>
   </aside>
+
+  <div class="sel" id="sel" dir="ltr" aria-live="polite">
+    <div class="sel__txt"><b class="sel__name"></b><span class="sel__art"></span></div>
+    <button type="button" data-a="turn" title="Turn 90° (, and . turn 15°)">Turn</button>
+    <button type="button" data-a="remove" title="Remove (Delete)">Remove</button>
+    <button type="button" data-a="close" class="sel__x" aria-label="Done">×</button>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
 
   <section class="board" id="board" dir="ltr" aria-label="Moodboard">
     <header class="board__head">

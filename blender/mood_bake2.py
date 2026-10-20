@@ -14,6 +14,15 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 S_DAY = int(argv[0]) if argv else 128
 S_LAMP = int(argv[1]) if len(argv) > 1 else 160
 ONLY = set(argv[2].split(",")) if len(argv) > 2 else None
+# "empty": the shell (and the rugs) baked with the movable furniture taken out, for rooms whose furniture the
+# visitor rearranges in the page. Saved as E<atlas>_<group>.npy next to the normal bakes.
+EMPTY = bool(ONLY and "empty" in ONLY)
+if EMPTY: ONLY.discard("empty"); ONLY = ONLY or None
+# "at:S" (or "at:SL"…) bakes only those atlases
+ATLASES = "SLR"
+for t in list(ONLY or []):
+    if t.startswith("at:"): ATLASES = t[3:]; ONLY.discard(t)
+if ONLY is not None and not ONLY: ONLY = None
 SIZE = {"S": 2048, "L": 1536, "R": 1536}
 FILES = {"S": "shell_raw.glb", "L": "living_raw.glb", "R": "rooms_raw.glb"}
 
@@ -139,17 +148,27 @@ if ONLY == {"export"}:
 else:
     groups = DAY + [g for g, _, _ in LAMPS]
     if ONLY: groups = [g for g in groups if g in ONLY]
-    for atlas in "SLR":
+    rugs = set()
+    if EMPTY:
+        P = json.load(open(os.path.join(OUT, "pieces.json"), encoding="utf-8"))
+        rugs = {p["id"] for p in P if p["rug"] and p["movable"]}
+    def gone(o, atlas):   # hidden in the empty bake: movable furniture (lamp bodies stay: they carry the light)
+        if not EMPTY or not o.get("pmov") or o.get("plamp"): return False
+        return atlas == "S" or o.get("piece") not in rugs
+    for atlas in ATLASES:
+        targets = ATL[atlas] if not EMPTY or atlas == "S" else [o for o in ATL[atlas] if o.get("piece") in rugs]
+        if not targets: continue
         img = prep_targets(atlas)
         for g in groups:
-            objs = ATL[atlas] if g in DAY else [o for o in ATL[atlas] if near(o, next(r for n, _, r in LAMPS if n == g))]
+            objs = targets if g in DAY else [o for o in targets if near(o, next(r for n, _, r in LAMPS if n == g))]
             if not objs: log(f"SKIP {atlas} {g} (nothing near)"); continue
             # a lamp group only needs the rooms its light reaches: the rest of the flat stays out of the GPU
             rooms = None if g in DAY else next(r for n, _, r in LAMPS if n == g)
-            for o in col.objects: o.hide_render = False if rooms is None else not near(o, rooms, ISOLATE)
+            for o in col.objects: o.hide_render = gone(o, atlas) or (False if rooms is None else not near(o, rooms, ISOLATE))
             t = time.time(); set_group(g); bake(atlas, objs, img)
-            v = pixels(img); np.save(os.path.join(OUT, "lm2", f"{atlas}_{g}.npy"), v.astype(np.float16))
-            log(f"BAKED {atlas} {g} {len(objs)} objs {time.time() - t:.0f}s  max {v.max():.3f}")
+            v = pixels(img); name = ("E" if EMPTY else "") + f"{atlas}_{g}.npy"
+            np.save(os.path.join(OUT, "lm2", name), v.astype(np.float16))
+            log(f"BAKED {name} {len(objs)} objs {time.time() - t:.0f}s  max {v.max():.3f}")
         log(f"ATLAS {atlas} done {time.time() - t0:.0f}s")
         for o in ATL[atlas]: o.data.uv_layers.active = o.data.uv_layers[0]
-log("MOOD BAKE2 DONE", ",".join(sorted(ONLY)) if ONLY else "all", f"{time.time() - t0:.0f}s")
+log("MOOD BAKE2 DONE", ("empty " if EMPTY else "") + (",".join(sorted(ONLY)) if ONLY else "all"), f"{time.time() - t0:.0f}s")
