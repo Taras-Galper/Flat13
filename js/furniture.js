@@ -84,7 +84,7 @@ export function createFurniture(ctx) {
   function make(id, d, g, added, srcId = id) {
     const p = { id, def: d, srcId, group: g, x: d.cx, y: d.cy, rot: 0, room: d.room, room0: d.room, x0: d.cx, y0: d.cy, removed: false, added, ...nameOf(d.name) };
     // a soft contact shadow, shown when the room switches to its "empty" bake
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(d.w + 0.32, d.d + 0.32), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: SHADOW, transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false }));
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(d.w + 0.32, d.d + 0.32), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: SHADOW, transparent: true, opacity: 0.62, depthWrite: false, toneMapped: false }));
     sh.rotation.x = -Math.PI / 2; sh.position.y = 0.012; sh.renderOrder = 2; sh.raycast = () => {}; sh.visible = false;
     if (!d.rug) g.add(sh);
     // the outline of the footprint while it is selected

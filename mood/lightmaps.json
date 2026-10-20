@@ -428,12 +428,395 @@
      ]
     }
    }
+  },
+  "EL": {
+   "glb": "",
+   "maps": {
+    "morning": {
+     "file": "lm/EL_morning.webp",
+     "scale": 0.7309017777442932
+    },
+    "midday": {
+     "file": "lm/EL_midday.webp",
+     "scale": 0.45396482944488525
+    },
+    "dusk": {
+     "file": "lm/EL_dusk.webp",
+     "scale": 0.01040556374937296
+    }
+   },
+   "channels": {
+    "entry": {
+     "file": "lm/EL_lamps0.webp",
+     "channel": 0,
+     "scale": 0.1512942761182785,
+     "circuits": [
+      "ENT_D",
+      "ENT_NICHE",
+      "ENT_SCREEN"
+     ]
+    },
+    "walls": {
+     "file": "lm/EL_lamps0.webp",
+     "channel": 1,
+     "scale": 0.49423515796661377,
+     "circuits": [
+      "WALL_E",
+      "LIV_CURT"
+     ]
+    },
+    "media": {
+     "file": "lm/EL_lamps0.webp",
+     "channel": 2,
+     "scale": 0.01721172221004963,
+     "circuits": [
+      "WALL_MEDIA",
+      "LIV_ART"
+     ]
+    },
+    "paper": {
+     "file": "lm/EL_lamps1.webp",
+     "channel": 0,
+     "scale": 0.1078350841999054,
+     "circuits": [
+      "LIV_PEND",
+      "LIV_COL",
+      "LIV_LANT"
+     ]
+    },
+    "screen": {
+     "file": "lm/EL_lamps1.webp",
+     "channel": 1,
+     "scale": 0.016805920749902725,
+     "circuits": [
+      "LIV_TV",
+      "LIV_CONSOLE"
+     ]
+    },
+    "kitchen": {
+     "file": "lm/EL_lamps1.webp",
+     "channel": 2,
+     "scale": 0.022930150851607323,
+     "circuits": [
+      "KIT_D",
+      "KIT_SHELF",
+      "KIT_PEND",
+      "KIT_PLINTH"
+     ]
+    },
+    "corridor": {
+     "file": "lm/EL_lamps2.webp",
+     "channel": 0,
+     "scale": 0.005242911633104086,
+     "circuits": [
+      "COR_D",
+      "NIGHT",
+      "PASS_GRAZE"
+     ]
+    },
+    "master": {
+     "file": "lm/EL_lamps2.webp",
+     "channel": 1,
+     "scale": 0.005049861967563629,
+     "circuits": [
+      "MST_CURT",
+      "MST_READ",
+      "MST_LAMPS",
+      "MST_ART",
+      "MST_NIGHT"
+     ]
+    },
+    "bed3": {
+     "file": "lm/EL_lamps2.webp",
+     "channel": 2,
+     "scale": 0.005272891838103533,
+     "circuits": [
+      "B3_DESK",
+      "B3_GRAZE",
+      "B3_TV",
+      "B3_CURT"
+     ]
+    },
+    "mamad": {
+     "file": "lm/EL_lamps3.webp",
+     "channel": 0,
+     "scale": 0.0050667654722929,
+     "circuits": [
+      "MAM_TRACK",
+      "MAM_MIRROR",
+      "MAM_LAMP",
+      "MAM_COLOR"
+     ]
+    },
+    "terrace": {
+     "file": "lm/EL_lamps3.webp",
+     "channel": 1,
+     "scale": 0.005229198839515448,
+     "circuits": [
+      "BAL_TREE",
+      "BAL_GLOW",
+      "BAL_WALL",
+      "BAL_TABLE"
+     ]
+    }
+   }
+  },
+  "ER": {
+   "glb": "",
+   "maps": {
+    "morning": {
+     "file": "lm/ER_morning.webp",
+     "scale": 0.1181950718164444
+    },
+    "midday": {
+     "file": "lm/ER_midday.webp",
+     "scale": 0.264648973941803
+    },
+    "dusk": {
+     "file": "lm/ER_dusk.webp",
+     "scale": 0.0054946523159742355
+    }
+   },
+   "channels": {
+    "entry": {
+     "file": "lm/ER_lamps0.webp",
+     "channel": 0,
+     "scale": 0.004901331849396229,
+     "circuits": [
+      "ENT_D",
+      "ENT_NICHE",
+      "ENT_SCREEN"
+     ]
+    },
+    "kitchen": {
+     "file": "lm/ER_lamps0.webp",
+     "channel": 1,
+     "scale": 0.004755043890327215,
+     "circuits": [
+      "KIT_D",
+      "KIT_SHELF",
+      "KIT_PEND",
+      "KIT_PLINTH"
+     ]
+    },
+    "corridor": {
+     "file": "lm/ER_lamps0.webp",
+     "channel": 2,
+     "scale": 0.5047619342803955,
+     "circuits": [
+      "COR_D",
+      "NIGHT",
+      "PASS_GRAZE"
+     ]
+    },
+    "master": {
+     "file": "lm/ER_lamps1.webp",
+     "channel": 0,
+     "scale": 0.16113625466823578,
+     "circuits": [
+      "MST_CURT",
+      "MST_READ",
+      "MST_LAMPS",
+      "MST_ART",
+      "MST_NIGHT"
+     ]
+    },
+    "bed3": {
+     "file": "lm/ER_lamps1.webp",
+     "channel": 1,
+     "scale": 0.40842318534851074,
+     "circuits": [
+      "B3_DESK",
+      "B3_GRAZE",
+      "B3_TV",
+      "B3_CURT"
+     ]
+    },
+    "mamad": {
+     "file": "lm/ER_lamps1.webp",
+     "channel": 2,
+     "scale": 0.17606575787067413,
+     "circuits": [
+      "MAM_TRACK",
+      "MAM_MIRROR",
+      "MAM_LAMP",
+      "MAM_COLOR"
+     ]
+    },
+    "bed4": {
+     "file": "lm/ER_lamps2.webp",
+     "channel": 0,
+     "scale": 0.3287157714366913,
+     "circuits": [
+      "B4_DISC",
+      "B4_CURT",
+      "B4_BOOK",
+      "B4_NIGHT"
+     ]
+    },
+    "terrace": {
+     "file": "lm/ER_lamps2.webp",
+     "channel": 1,
+     "scale": 0.005054577719420195,
+     "circuits": [
+      "BAL_TREE",
+      "BAL_GLOW",
+      "BAL_WALL",
+      "BAL_TABLE"
+     ]
+    }
+   }
+  },
+  "ES": {
+   "glb": "",
+   "maps": {
+    "morning": {
+     "file": "lm/ES_morning.webp",
+     "scale": 4.681082248687744
+    },
+    "midday": {
+     "file": "lm/ES_midday.webp",
+     "scale": 6.6524577140808105
+    },
+    "dusk": {
+     "file": "lm/ES_dusk.webp",
+     "scale": 0.1969468593597412
+    }
+   },
+   "channels": {
+    "entry": {
+     "file": "lm/ES_lamps0.webp",
+     "channel": 0,
+     "scale": 0.1913972944021225,
+     "circuits": [
+      "ENT_D",
+      "ENT_NICHE",
+      "ENT_SCREEN"
+     ]
+    },
+    "walls": {
+     "file": "lm/ES_lamps0.webp",
+     "channel": 1,
+     "scale": 0.5286661386489868,
+     "circuits": [
+      "WALL_E",
+      "LIV_CURT"
+     ]
+    },
+    "media": {
+     "file": "lm/ES_lamps0.webp",
+     "channel": 2,
+     "scale": 0.105694480240345,
+     "circuits": [
+      "WALL_MEDIA",
+      "LIV_ART"
+     ]
+    },
+    "paper": {
+     "file": "lm/ES_lamps1.webp",
+     "channel": 0,
+     "scale": 0.1697578728199005,
+     "circuits": [
+      "LIV_PEND",
+      "LIV_COL",
+      "LIV_LANT"
+     ]
+    },
+    "screen": {
+     "file": "lm/ES_lamps1.webp",
+     "channel": 1,
+     "scale": 0.029223330318927765,
+     "circuits": [
+      "LIV_TV",
+      "LIV_CONSOLE"
+     ]
+    },
+    "kitchen": {
+     "file": "lm/ES_lamps1.webp",
+     "channel": 2,
+     "scale": 0.3062148988246918,
+     "circuits": [
+      "KIT_D",
+      "KIT_SHELF",
+      "KIT_PEND",
+      "KIT_PLINTH"
+     ]
+    },
+    "corridor": {
+     "file": "lm/ES_lamps2.webp",
+     "channel": 0,
+     "scale": 0.4394001364707947,
+     "circuits": [
+      "COR_D",
+      "NIGHT",
+      "PASS_GRAZE"
+     ]
+    },
+    "master": {
+     "file": "lm/ES_lamps2.webp",
+     "channel": 1,
+     "scale": 0.6825122237205505,
+     "circuits": [
+      "MST_CURT",
+      "MST_READ",
+      "MST_LAMPS",
+      "MST_ART",
+      "MST_NIGHT"
+     ]
+    },
+    "bed3": {
+     "file": "lm/ES_lamps2.webp",
+     "channel": 2,
+     "scale": 0.5711669921875,
+     "circuits": [
+      "B3_DESK",
+      "B3_GRAZE",
+      "B3_TV",
+      "B3_CURT"
+     ]
+    },
+    "mamad": {
+     "file": "lm/ES_lamps3.webp",
+     "channel": 0,
+     "scale": 0.18547451496124268,
+     "circuits": [
+      "MAM_TRACK",
+      "MAM_MIRROR",
+      "MAM_LAMP",
+      "MAM_COLOR"
+     ]
+    },
+    "bed4": {
+     "file": "lm/ES_lamps3.webp",
+     "channel": 1,
+     "scale": 0.4778037667274475,
+     "circuits": [
+      "B4_DISC",
+      "B4_CURT",
+      "B4_BOOK",
+      "B4_NIGHT"
+     ]
+    },
+    "terrace": {
+     "file": "lm/ES_lamps3.webp",
+     "channel": 2,
+     "scale": 0.2255510538816452,
+     "circuits": [
+      "BAL_TREE",
+      "BAL_GLOW",
+      "BAL_WALL",
+      "BAL_TABLE"
+     ]
+    }
+   }
   }
  },
  "order": [
   "S",
   "L",
   "R",
+  "EL",
+  "ER",
   "ES"
  ],
  "day": [
