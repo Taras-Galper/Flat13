@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js';
+import { createFurniture } from './furniture.js?v=10';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -141,7 +141,11 @@ const U = {
   flat: { value: FLAT },
 };
 let MANIFEST = null, TEXMAP = {};
-const texLoader = new THREE.TextureLoader();
+// every file the page loads carries the release version, so a new deploy never mixes with cached old files
+const VER = new URL(import.meta.url).searchParams.get('v') || 'dev';
+const vurl = (u) => (/^(data|blob):/.test(u) ? u : u + (u.includes('?') ? '&' : '?') + 'v=' + VER);
+const manager = new THREE.LoadingManager(); manager.setURLModifier(vurl);
+const texLoader = new THREE.TextureLoader(manager);
 const lmTex = {};
 function loadLM(file) {
   if (!lmTex[file]) {
@@ -446,7 +450,7 @@ function prepare(root, atlas) {
 }
 function loadPart(atlas, onProgress) {
   const A = MANIFEST.atlases[atlas];
-  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(BASE + A.glb, (e) => onProgress && e.total && onProgress(e.loaded / e.total))
+  return new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder).loadAsync(BASE + A.glb, (e) => onProgress && e.total && onProgress(e.loaded / e.total))
     .then((gltf) => {
       prepare(gltf.scene, atlas); scene.add(gltf.scene); parts[atlas] = gltf.scene;
       if (FURN && atlas !== 'S') { const list = []; gltf.scene.traverse((o) => { if (o.isMesh) list.push(o); }); FURN.addMeshes(list); }
@@ -455,15 +459,15 @@ function loadPart(atlas, onProgress) {
 }
 
 async function init() {
-  MANIFEST = await (await fetch(BASE + 'lightmaps.json')).json();
+  MANIFEST = await (await fetch(vurl(BASE + 'lightmaps.json'))).json();
   if (!MANIFEST.day) MANIFEST.day = ['morning', 'midday', 'dusk'];
-  try { TEXMAP = await (await fetch(BASE + 'texmap.json')).json(); } catch (e) { console.warn('texture mapping table not found'); }
+  try { TEXMAP = await (await fetch(vurl(BASE + 'texmap.json'))).json(); } catch (e) { console.warn('texture mapping table not found'); }
   try {
-    const L = await (await fetch('design/lighting.json')).json();
+    const L = await (await fetch(vurl('design/lighting.json'))).json();
     for (const s of L.scenes) SCENES[s.id] = { he: s.he, en: s.name, levels: s.levels, text: s.text };
     for (const [k, c] of Object.entries(L.circuits)) CCT[k] = c.cct;
   } catch (e) { console.warn('lighting plan not found', e); }
-  try { PIECE_DEFS = Object.fromEntries((await (await fetch(BASE + 'pieces.json')).json()).map((d) => [d.id, d])); } catch (e) { console.warn('no furniture pieces'); }
+  try { PIECE_DEFS = Object.fromEntries((await (await fetch(vurl(BASE + 'pieces.json'))).json()).map((d) => [d.id, d])); } catch (e) { console.warn('no furniture pieces'); }
   FURN = createFurniture(furnitureCtx());
   const order = (MANIFEST.order || Object.keys(MANIFEST.atlases)).filter((a) => MANIFEST.atlases[a]?.glb);
   const first = order.filter((a) => a !== 'R'), later = order.filter((a) => a === 'R');
