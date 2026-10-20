@@ -190,7 +190,7 @@ function lightmapped(mat, atlas) {
     });
     if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A }, uRectE: U_EMPTY });
     if (wall) Object.assign(sh.uniforms, { uWallCol: ud.uWallCol, uWallBase: ud.uWallBase });
-    if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint });
+    if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint, uGrout: ud.uGrout || { value: new THREE.Vector3() } });
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
@@ -206,7 +206,9 @@ function lightmapped(mat, atlas) {
           for (int i = 0; i < ${NR}; i++) { vec4 r = uRects[i]; if (pl.x >= r.x && pl.x <= r.y && pl.y >= r.z && pl.y <= r.w) ri = i; }
           return ri; }` : ''}
         ${wall ? `uniform vec3 uWallCol[${NA}]; uniform vec3 uWallBase;` : ''}
-        ${planar ? `uniform vec4 uTri; uniform float uTriRot; uniform vec2 uTexAdj; uniform vec3 uTexTint;
+        ${planar ? `uniform vec4 uTri; uniform float uTriRot; uniform vec2 uTexAdj; uniform vec3 uTexTint; uniform vec3 uGrout;
+        vec2 flatUV() { vec3 bp = vec3(vWP.x, -vWP.z, vWP.y); float c = cos(uTriRot), s = sin(uTriRot);
+          return vec2(c * bp.x - s * bp.y, s * bp.x + c * bp.y) * uTri.y + uTri.zw; }
         // Blender's object-space texture mapping, which glTF cannot carry: flat (floors) or box (wood, fabric)
         vec4 triTex(sampler2D t, vec2 uv) {
           if (uTri.x < 0.5) return texture2D(t, uv);
@@ -248,7 +250,16 @@ function lightmapped(mat, atlas) {
           diffuseColor *= triTex(map, vMapUv);
           // the colour adjustments of the Blender material (value, saturation, tint)
           diffuseColor.rgb = mix(vec3(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722))), diffuseColor.rgb, uTexAdj.y) * uTexAdj.x * uTexTint;
-        #endif`)
+        #endif
+        // tile joints, drawn at their real width and anti-aliased: the texture's 1 mm lines vanish beyond a metre
+        if (uGrout.y > 0.0 && uTri.x > 0.5 && uTri.x < 1.5) {
+          vec2 g = flatUV() * uGrout.x;                       // whole numbers are the joints
+          vec2 f = abs(fract(g + 0.5) - 0.5), w = max(fwidth(g), vec2(1e-5));
+          vec2 hw = vec2(uGrout.z);                           // half the joint width, in tiles
+          vec2 a = 1.0 - smoothstep(hw - 0.5 * w, hw + 0.5 * w, f);
+          a = max(a, 0.45 * (1.0 - smoothstep(vec2(0.0), 0.9 * w, f)) * (1.0 - smoothstep(vec2(0.08), vec2(0.25), w)));   // a hairline at a distance, gone before it would shimmer
+          diffuseColor.rgb *= 1.0 - uGrout.y * max(a.x, a.y);
+        }`)
       .replace(/#include <roughnessmap_fragment>/, `float roughnessFactor = roughness;
         #ifdef USE_ROUGHNESSMAP
           roughnessFactor *= triTex(roughnessMap, vRoughnessMapUv).g;
@@ -353,10 +364,10 @@ function applySample(area, cat, id, quiet = false) {
       if (item.tex) {
         m.map = tex(item.tex.map, true); m.normalMap = null; m.roughnessMap = tex(item.tex.rough, false);
         m.userData.uTri.value.set(1, 1 / item.size, 0, 0); m.userData.uTriRot.value = 0; m.color.set(0xffffff);
-        m.userData.uTexAdj.value.set(1, 1); m.userData.uTexTint.value.set(1, 1, 1);
+        m.userData.uTexAdj.value.set(1, 1); m.userData.uTexTint.value.set(1, 1, 1); m.userData.uGrout.value.set(0, 0, 0);
       } else {
         m.map = o.map; m.normalMap = o.normalMap; m.roughnessMap = o.roughnessMap; m.color.copy(o.color);
-        m.userData.uTri.value.copy(o.tri); m.userData.uTriRot.value = o.triRot; m.userData.uTexAdj.value.copy(o.adj); m.userData.uTexTint.value.copy(o.tint);
+        m.userData.uTri.value.copy(o.tri); m.userData.uTriRot.value = o.triRot; m.userData.uTexAdj.value.copy(o.adj); m.userData.uTexTint.value.copy(o.tint); m.userData.uGrout.value.copy(o.grout);
       }
       m.needsUpdate = true;
     } else if (cat !== 'walls') {
@@ -398,8 +409,10 @@ function prepare(root, atlas) {
       if (tm || cat === 'floor') {
         const tri = new THREE.Vector4(tm ? (tm.mode === 'flat' ? 1 : 2) : 0, tm ? tm.k : 1, tm?.off?.[0] || 0, tm?.off?.[1] || 0);
         const adj = new THREE.Vector2(tm?.value ?? 1, tm?.sat ?? 1), tint = new THREE.Vector3(...(tm?.tint || [1, 1, 1]));
-        Object.assign(mm.userData, { uTri: { value: tri.clone() }, uTriRot: { value: tm?.rot || 0 }, uTexAdj: { value: adj.clone() }, uTexTint: { value: tint.clone() } });
-        Object.assign(mm.userData.orig, { tri, triRot: tm?.rot || 0, adj, tint });
+        // 60x60 porcelain: the texture holds 2 x 2 tiles; joints 3.5 mm wide
+        const grout = /^Tile ivory/.test(m.name) ? new THREE.Vector3(2, 0.3, 0.00175 / 0.6) : new THREE.Vector3();
+        Object.assign(mm.userData, { uTri: { value: tri.clone() }, uTriRot: { value: tm?.rot || 0 }, uTexAdj: { value: adj.clone() }, uTexTint: { value: tint.clone() }, uGrout: { value: grout.clone() } });
+        Object.assign(mm.userData.orig, { tri, triRot: tm?.rot || 0, adj, tint, grout });
         if (tm) { mm.normalMap = null; mm.userData.orig.normalMap = null; }   // their normal maps were object-mapped too
       }
       if (cat === 'walls') {
