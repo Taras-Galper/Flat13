@@ -7,9 +7,14 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=12';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=13';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -121,6 +126,11 @@ const bgOf = (sw) => (sw.startsWith('#') ? `background:${sw}` : `background-imag
 const artNo = (n) => `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6)}`;
 
 // ------------------------------------------------------------------ renderer
+// Blender renders the flat with AgX and the look "Medium High Contrast": a contrast of 1.2 in AgX's log space,
+// around middle grey, before the AgX curve. three.js has plain AgX, so the look is added here (?agxbase turns it off).
+if (!Q.has('agxbase')) THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+  'color = agxDefaultContrastApprox( color );',
+  'color = clamp( ( color - 0.6060606 ) * 1.2 + 0.6060606, 0.0, 1.0 ); // AgX - Medium High Contrast\n\tcolor = agxDefaultContrastApprox( color );');
 const canvas = document.getElementById('mood');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -129,6 +139,15 @@ renderer.toneMapping = THREE.AgXToneMapping;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(42, 1, 0.03, 60000);
 camera.rotation.order = 'YXZ';
+// a soft glow on what is brighter than white after exposure (lamps, lit shades, the sky in the window)
+const BLOOM = !Q.has('nobloom'), TOUCH = matchMedia('(pointer: coarse)').matches;
+let composer = null, bloom = null;
+if (BLOOM) {
+  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: TOUCH ? 2 : 4 }));
+  composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.22, 0.45, 1); composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.screenSpacePanning = true;
 controls.maxPolarAngle = THREE.MathUtils.degToRad(86);
@@ -139,6 +158,7 @@ const U = {
   gain: { value: 1.0 },
   grade: { value: new THREE.Vector3(1, 1, 1) },   // a white balance per time of day, like the renders' 3600 K
   flat: { value: FLAT },
+  relief: { value: Q.has('norelief') ? 0 : 0.9 },   // how strongly the bump maps shade the baked light
 };
 let MANIFEST = null, TEXMAP = {};
 // every file the page loads carries the release version, so a new deploy never mixes with cached old files
@@ -149,37 +169,87 @@ const texLoader = new THREE.TextureLoader(manager);
 // The light maps of one atlas (3 times of day + the lamp maps) go into ONE texture array: most graphics cards
 // (and Chrome on Windows) allow only 16 textures per shader, and the shell with its "empty room" light needed 14
 // separate maps on top of the material's own textures, so its shader failed and the floor was not drawn at all.
+// The maps come GPU-compressed (KTX2, made by tools/lm_ktx2.mjs) and stay compressed on the graphics card, about
+// 4–8× less memory than WebP, which the browser unpacks to full 32-bit colour. Then each lamp group is its own grey
+// layer (slot = lamp file × 3 + channel); with WebP (the default until KTX2 is proven on phones) the lamp maps hold three groups each.
+// The "empty room" light (atlases E…) is only fetched once someone rearranges furniture.
+const USE_KTX = () => !!MANIFEST.black && Q.has('ktx');   // still on trial: on with ?ktx
 const lmBitmaps = {}, lumCache = {};
 function lmBitmap(file) {
   return (lmBitmaps[file] = lmBitmaps[file] || fetch(vurl(BASE + file)).then((r) => r.blob())
     .then((b) => createImageBitmap(b, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' })));
 }
-function lmArray(A) {
+let ktxLoader = null;
+const ktx = (file) => {
+  if (!ktxLoader) ktxLoader = new KTX2Loader(manager).setTranscoderPath('vendor/three/addons/libs/basis/').setWorkerLimit(2).detectSupport(renderer);
+  return ktxLoader.loadAsync(BASE + file);
+};
+const ARRAY_OK = new Set([THREE.RGBAFormat, THREE.RGBA_BPTC_Format, THREE.RGB_ETC2_Format, THREE.RGBA_ETC2_EAC_Format, THREE.RGBA_ASTC_4x4_Format, THREE.RGB_S3TC_DXT1_Format, THREE.RGBA_S3TC_DXT1_Format, THREE.RGBA_S3TC_DXT5_Format]);
+// a small CPU copy of an atlas's WebP maps, to read the light on the floor under a moved piece
+function loadLum(A) {
+  if (A.arr && !A.arr.grey) return A.arr.load();     // the WebP path makes these copies itself, from the same images
+  const files = [...MANIFEST.day.map((g) => A.maps[g]?.file), ...lampFiles(A)].filter((f) => f && !lumCache[f]);
+  return Promise.all(files.map((f) => lmBitmap(f).then((bm) => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(bm, 0, 0, 256, 256); lumCache[f] = g.getImageData(0, 0, 256, 256).data; bm.close && bm.close(); delete lmBitmaps[f];
+  })));
+}
+function lmArray(A, name) {
   if (A.arr) return A.arr;
-  const files = [...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].file : null)), ...lampFiles(A)];
+  const useK = USE_KTX() && A.ktx;
+  const files = useK ? A.ktx : [...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].file : null)), ...lampFiles(A)];
   const tex = new THREE.DataArrayTexture(null, 1, 1, files.length);       // a stand-in: the GL texture behind it is made here
   const gl = renderer.getContext(), glTex = gl.createTexture();
   const p = renderer.properties.get(tex); p.__webglTexture = glTex; p.__webglInit = true;
-  A.arr = { tex, files };
-  Promise.all(files.map((f) => (f ? lmBitmap(f) : null))).then((bms) => {
-    const size = bms.find(Boolean)?.width || 1, levels = Math.floor(Math.log2(size)) + 1;
-    renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex);
-    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, size, size, files.length);   // starts black: missing maps stay black
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
-    bms.forEach((bm, i) => { if (bm && bm.width === size) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, size, size, 1, gl.RGBA, gl.UNSIGNED_BYTE, bm); });
+  const params = () => {
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const an = gl.getExtension('EXT_texture_filter_anisotropic'); if (an) gl.texParameterf(gl.TEXTURE_2D_ARRAY, an.TEXTURE_MAX_ANISOTROPY_EXT, 4);
-    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-    // a small CPU copy of each map, to read the light on the floor under a moved piece
-    bms.forEach((bm, i) => { if (bm && files[i] && !lumCache[files[i]]) {
+  };
+  const pixelStore = () => {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  };
+  const fromKTX = () => {
+    const blackFile = (w) => MANIFEST.black[w];
+    return Promise.all(files.map((f) => (f ? ktx(f).catch((e) => { console.warn('light map', f, e); return null; }) : null))).then(async (ts) => {
+      const t0 = ts.find(Boolean); if (!t0) throw new Error('no light maps');
+      const w = t0.mipmaps[0].width, fmt = t0.format;
+      if (!ARRAY_OK.has(fmt)) throw new Error('compressed format not usable for arrays: ' + fmt);
+      const black = await ktx(blackFile(w));
+      const comp = fmt !== THREE.RGBAFormat;
+      const levels = t0.mipmaps.filter((m) => !comp || Math.min(m.width, m.height) >= 4).length;   // compressed: stop at 4×4, one block
+      renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex); pixelStore();
+      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, comp ? fmt : gl.RGBA8, w, w, files.length);
+      ts.forEach((t, i) => {
+        const src = t && t.format === fmt && t.mipmaps[0].width === w ? t : black;
+        src.mipmaps.slice(0, levels).forEach((m, l) => {
+          if (comp) gl.compressedTexSubImage3D(gl.TEXTURE_2D_ARRAY, l, 0, 0, i, m.width, m.height, 1, fmt, m.data);
+          else gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, 0, 0, i, m.width, m.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, m.data);
+        });
+      });
+      params(); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAX_LEVEL, levels - 1); A.gpuBytes = ts.length * t0.mipmaps.reduce((n, m) => n + m.data.byteLength, 0);
+      if (Q.has('lmdebug')) console.warn('LMDEBUG', name, fmt, w, t0.mipmaps.length, files.length, gl.getError(), black.mipmaps.length, black.format);
+      ts.forEach((t) => t && t.dispose()); black.dispose();
+    });
+  };
+  const fromWebP = () => Promise.all(files.map((f) => (f ? lmBitmap(f) : null))).then((bms) => {
+    const size = bms.find(Boolean)?.width || 1, levels = Math.floor(Math.log2(size)) + 1;
+    renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex); pixelStore();
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, size, size, files.length);   // starts black: missing maps stay black
+    bms.forEach((bm, i) => { if (bm && bm.width === size) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, size, size, 1, gl.RGBA, gl.UNSIGNED_BYTE, bm); });
+    params(); gl.generateMipmap(gl.TEXTURE_2D_ARRAY); A.gpuBytes = files.length * size * size * 4 * 4 / 3;
+    bms.forEach((bm, i) => { const f = files[i]; if (bm && f && !lumCache[f]) {
       const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
-      g.drawImage(bm, 0, 0, 256, 256); lumCache[files[i]] = g.getImageData(0, 0, 256, 256).data; } });
+      g.drawImage(bm, 0, 0, 256, 256); lumCache[f] = g.getImageData(0, 0, 256, 256).data; } });
     bms.forEach((bm) => bm && bm.close && bm.close()); files.forEach((f) => f && delete lmBitmaps[f]);
-    envDirty = performance.now();
-  }).catch((e) => console.warn('light maps failed to load', e));
+  });
+  let loading = null;
+  const load = () => (loading = loading || (useK ? fromKTX() : fromWebP()).then(() => { envDirty = performance.now(); })
+    .catch((e) => console.warn('light maps failed to load', name, e)));
+  A.arr = { tex, files, grey: !!useK, load };
+  if (!/^E/.test(name)) load();            // the empty-room light waits until it is needed
   return A.arr;
 }
 const BLACK = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); BLACK.needsUpdate = true; BLACK.channel = 1;
@@ -189,26 +259,34 @@ const RECT_U = RECTS.map(({ q }) => new THREE.Vector4(q[0], q[1], q[2], q[3]));
 const RECT_A = RECTS.map(({ a }) => a);
 
 // the light of one atlas, as GLSL: declarations, uniforms and the sum E of its day and lamp maps
-function lightSet(A, tag) {
+function lightSet(A, tag, name) {
   const files = lampFiles(A), NL = Math.max(1, files.length);
   A.lampW = A.lampW || Array.from({ length: NL * 3 }, () => new THREE.Vector3());
-  const arr = lmArray(A);
+  const arr = lmArray(A, name);
   const dayS = new THREE.Vector3(...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].scale : 0)));
   const u = { [`l${tag}A`]: { value: arr.tex }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
   const decl = `uniform sampler2DArray l${tag}A; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
   const at = (i) => `lmDecode(texture(l${tag}A, vec3(q, ${i}.0)).rgb)`;
   const sum = `vec3 E${tag} = uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)};
-          ${Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
+          ${arr.grey
+    ? arr.files.slice(3).map((f, s) => (f ? `E${tag} += ${at(3 + s)}.r * u${tag}LampW[${s}];` : '')).join('\n          ')
+    : Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
   return { u, decl, sum, NL };
 }
+// reflections fitted to the room you are in: the probe's directions are traced to the room's walls (box projection),
+// so the floor and the oak reflect the window and the lamps where they really are
+const U_BOX = { min: { value: new THREE.Vector3() }, max: { value: new THREE.Vector3() }, pos: { value: new THREE.Vector3() }, on: { value: 0 } };
+const ENV_PARS = THREE.ShaderChunk.envmap_physical_pars_fragment.replace(
+  'reflectVec = inverseTransformDirection( reflectVec, viewMatrix );',
+  'reflectVec = inverseTransformDirection( reflectVec, viewMatrix ); reflectVec = boxProject( reflectVec );');
 // rooms whose furniture was rearranged switch their shell (and rugs) to the "empty room" bake: one flag per room rectangle
 const U_EMPTY = { value: new Float32Array(NR) };
 
 function lightmapped(mat, atlas) {
   const A = MANIFEST.atlases[atlas];
-  const full = lightSet(A, 'F');
+  const full = lightSet(A, 'F', atlas);
   const EA = MANIFEST.atlases['E' + atlas];
-  const empty = EA && (atlas === 'S' || mat.userData.rug) ? lightSet(EA, 'E') : null;
+  const empty = EA && (atlas === 'S' || mat.userData.rug) ? lightSet(EA, 'E', 'E' + atlas) : null;
   mat.lightMap = BLACK; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
   mat.userData.atlas = atlas;
   mat.userData.uPiece = mat.userData.uPiece || { value: 1 };       // a moved piece of furniture takes the light of where it now stands
@@ -218,26 +296,33 @@ function lightmapped(mat, atlas) {
     Object.assign(sh.uniforms, full.u, empty ? empty.u : {}, {
       uDayW: U.dayW, uGain: U.gain, uGrade: U.grade, uFlat: { value: Object.keys(A.maps).length ? 0 : FLAT }, uPiece: ud.uPiece,
       uTint: ud.uTint || { value: new THREE.Color(1, 1, 1) }, uTintAmt: ud.uTintAmt || { value: 0 },
+      uBoxMin: U_BOX.min, uBoxMax: U_BOX.max, uBoxPos: U_BOX.pos, uBoxOn: U_BOX.on,
     });
     if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A }, uRectE: U_EMPTY });
     if (wall) Object.assign(sh.uniforms, { uWallCol: ud.uWallCol, uWallBase: ud.uWallBase });
-    if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint, uGrout: ud.uGrout || { value: new THREE.Vector3() } });
+    if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint, uGrout: ud.uGrout || { value: new THREE.Vector3() }, uRelief: U.relief });
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
     let fs = sh.fragmentShader
+      .replace('#include <envmap_physical_pars_fragment>', ENV_PARS)
       .replace('#include <common>', `#include <common>
         varying vec3 vWP; varying vec3 vWN;
         ${full.decl} ${empty ? empty.decl : ''}
         uniform vec3 uDayW; uniform float uGain, uFlat, uPiece; uniform vec3 uGrade;
         uniform vec3 uTint; uniform float uTintAmt;
+        uniform vec3 uBoxMin, uBoxMax, uBoxPos; uniform float uBoxOn;
+        vec3 boxProject(vec3 v) {   // only for surfaces inside the room box; others keep the plain probe
+          if (uBoxOn < 0.5 || any(lessThan(vWP, uBoxMin - 0.02)) || any(greaterThan(vWP, uBoxMax + 0.02))) return v;
+          vec3 a = (uBoxMax - vWP) / v, b = (uBoxMin - vWP) / v, f = max(a, b);
+          return vWP + v * min(min(f.x, f.y), f.z) - uBoxPos; }
         ${rects ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}]; uniform float uRectE[${NR}];
         // which room rectangle this side of a surface is in (a step along the normal, into the room)
         int rectOf() { vec3 qp = vWP + normalize(vWN) * 0.08; vec2 pl = vec2(qp.x, -qp.z); int ri = -1;
           for (int i = 0; i < ${NR}; i++) { vec4 r = uRects[i]; if (pl.x >= r.x && pl.x <= r.y && pl.y >= r.z && pl.y <= r.w) ri = i; }
           return ri; }` : ''}
         ${wall ? `uniform vec3 uWallCol[${NA}]; uniform vec3 uWallBase;` : ''}
-        ${planar ? `uniform vec4 uTri; uniform float uTriRot; uniform vec2 uTexAdj; uniform vec3 uTexTint; uniform vec3 uGrout;
+        ${planar ? `uniform vec4 uTri; uniform float uTriRot; uniform vec2 uTexAdj; uniform vec3 uTexTint; uniform vec3 uGrout; uniform float uRelief;
         vec2 flatUV() { vec3 bp = vec3(vWP.x, -vWP.z, vWP.y); float c = cos(uTriRot), s = sin(uTriRot);
           return vec2(c * bp.x - s * bp.y, s * bp.x + c * bp.y) * uTri.y + uTri.zw; }
         // Blender's object-space texture mapping, which glTF cannot carry: flat (floors) or box (wood, fabric)
@@ -278,6 +363,7 @@ function lightmapped(mat, atlas) {
             for (int i = 0; i < ${NR}; i++) if (i == ri) e = uRectE[i];
             E = mix(EF, EE, e); }` : ''}
           E += vec3(uFlat);
+          ${planar ? 'E *= relief;' : ''}
           irradiance += E * uGrade * uGain * uPiece * PI; }`);
     if (planar) fs = fs
       .replace(/#include <map_fragment>/, `
@@ -295,6 +381,33 @@ function lightmapped(mat, atlas) {
           a = max(a, 0.45 * (1.0 - smoothstep(vec2(0.0), 0.9 * w, f)) * (1.0 - smoothstep(vec2(0.08), vec2(0.25), w)));   // a hairline at a distance, gone before it would shimmer
           diffuseColor.rgb *= 1.0 - uGrout.y * max(a.x, a.y);
         }`)
+      // the bump maps, mapped like the colour (object space), and a little relief in the baked light, which knows no bumps
+      .replace(/#include <normal_fragment_maps>/, `float relief = 1.0;
+        #ifdef USE_NORMALMAP
+        if (uTri.x > 0.5) {
+          vec3 Ng = normalize(vec3(vWN.x, -vWN.z, vWN.y)) * faceDirection;   // Blender axes, z up
+          vec3 bp = vec3(vWP.x, -vWP.z, vWP.y), d;
+          if (uTri.x < 1.5) {
+            float c = cos(uTriRot), s = sin(uTriRot);
+            vec2 p = vec2(c * bp.x - s * bp.y, s * bp.x + c * bp.y) * uTri.y + uTri.zw;
+            vec2 t = (texture2D(normalMap, vec2(p.x, 1.0 - p.y)).xy * 2.0 - 1.0) * normalScale;
+            d = vec3(c, -s, 0.0) * t.x + vec3(s, c, 0.0) * t.y;
+          } else {
+            vec3 bn = abs(Ng); bn = pow(bn, vec3(6.0)); bn /= dot(bn, vec3(1.0));
+            vec3 sp = bp * uTri.y;
+            vec2 tx = (texture2D(normalMap, vec2(sp.y, 1.0 - sp.z)).xy * 2.0 - 1.0) * normalScale;
+            vec2 ty = (texture2D(normalMap, vec2(sp.x, 1.0 - sp.z)).xy * 2.0 - 1.0) * normalScale;
+            vec2 tz = (texture2D(normalMap, vec2(sp.x, 1.0 - sp.y)).xy * 2.0 - 1.0) * normalScale;
+            d = vec3(0.0, tx.x, tx.y) * bn.x + vec3(ty.x, 0.0, ty.y) * bn.y + vec3(tz.x, tz.y, 0.0) * bn.z;
+          }
+          d -= Ng * dot(d, Ng);
+          vec3 Nb = normalize(Ng + d);
+          normal = normalize((viewMatrix * vec4(Nb.x, Nb.z, -Nb.y, 0.0)).xyz);
+          relief = clamp(1.0 + uRelief * dot(d, vec3(0.34, 0.44, 0.83)), 0.6, 1.4);   // tilted towards a soft key light from above
+        } else {
+        #include <normal_fragment_maps>
+        }
+        #endif`)
       .replace(/#include <roughnessmap_fragment>/, `float roughnessFactor = roughness;
         #ifdef USE_ROUGHNESSMAP
           roughnessFactor *= triTex(roughnessMap, vRoughnessMapUv).g;
@@ -319,7 +432,7 @@ const state = { time: 2, scene: 'evening', userPickedScene: false, area: 'living
 const byCatArea = {};               // `${cat}:${area}` → materials
 const wallMats = [];                // wall paint lives in the shader: one colour per area
 const emissive = [];                // { mat, circuit, base, paper }
-let ceilings = [], world = null, sky = null;
+let ceilings = [], world = null, sky = null, CEIL_H = 2.7;
 const parts = {};                   // atlas → loaded group
 const meshes = [];                  // every interior mesh (for picking)
 const floorMeshes = [];             // the floors of the shell (for the light under a moved piece)
@@ -397,7 +510,7 @@ function applySample(area, cat, id, quiet = false) {
     const o = m.userData.orig;
     if (cat === 'floor') {
       if (item.tex) {
-        m.map = tex(item.tex.map, true); m.normalMap = null; m.roughnessMap = tex(item.tex.rough, false);
+        m.map = tex(item.tex.map, true); m.normalMap = tex(item.tex.nor, false); m.roughnessMap = tex(item.tex.rough, false);
         m.userData.uTri.value.set(1, 1 / item.size, 0, 0); m.userData.uTriRot.value = 0; m.color.set(0xffffff);
         m.userData.uTexAdj.value.set(1, 1); m.userData.uTexTint.value.set(1, 1, 1); m.userData.uGrout.value.set(0, 0, 0);
       } else {
@@ -448,7 +561,6 @@ function prepare(root, atlas) {
         const grout = /^Tile ivory/.test(m.name) ? new THREE.Vector3(2, 0.3, 0.00175 / 0.6) : new THREE.Vector3();
         Object.assign(mm.userData, { uTri: { value: tri.clone() }, uTriRot: { value: tm?.rot || 0 }, uTexAdj: { value: adj.clone() }, uTexTint: { value: tint.clone() }, uGrout: { value: grout.clone() } });
         Object.assign(mm.userData.orig, { tri, triRot: tm?.rot || 0, adj, tint, grout });
-        if (tm) { mm.normalMap = null; mm.userData.orig.normalMap = null; }   // their normal maps were object-mapped too
       }
       if (cat === 'walls') {
         mm.userData.uWallBase = { value: m.color.clone() };
@@ -511,6 +623,7 @@ async function init() {
   // reflections: a cube map of the lit room itself, refreshed when the light changes
   envCam = new THREE.CubeCamera(0.05, 60000, new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType }));
   envCam.position.copy(P(5.6, 7.2, 1.3)); scene.add(envCam);
+  { const b = new THREE.Box3(); for (const c of ceilings) b.expandByObject(c); if (!b.isEmpty() && b.min.y > 2 && b.min.y < 3.5) CEIL_H = b.min.y; }
   pmrem = new THREE.PMREMGenerator(renderer);
   scene.environmentIntensity = 0.6;
   // live light for the world outside only (the interior shader ignores it)
@@ -553,6 +666,18 @@ function sampleLight(px, py) {
   }
   return 0.2126 * E[0] + 0.7152 * E[1] + 0.0722 * E[2];
 }
+// rooms whose furniture was moved switch to the empty-room light, which is fetched the first time it is needed
+let emptyState = 0, wantEmpty = new Set();
+function applyEmpty() { RECTS.forEach((q, i) => { U_EMPTY.value[i] = wantEmpty.has(q.r) ? 1 : 0; }); envDirty = performance.now() + 300; }
+function setEmptyRooms(rooms) {
+  wantEmpty = new Set(rooms);
+  if (emptyState === 2 || !wantEmpty.size) return applyEmpty();
+  if (emptyState === 1) return;
+  emptyState = 1;
+  const E = Object.entries(MANIFEST.atlases).filter(([k, A]) => /^E/.test(k) && A.arr);
+  Promise.all([...E.map(([, A]) => A.arr.load()), loadLum(MANIFEST.atlases.ES || MANIFEST.atlases.S)])
+    .then(() => { emptyState = 2; applyEmpty(); if (FURN) FURN.refreshGains(); });
+}
 const visibleDeep = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
 function furnitureCtx() {
   return {
@@ -564,7 +689,7 @@ function furnitureCtx() {
       return ray.intersectObjects(meshes, false).find((h) => visibleDeep(h.object) && !h.object.material.transparent) || null;
     },
     get hasEmpty() { return !!MANIFEST.atlases.ES; },
-    setEmptyRooms: (rooms) => { RECTS.forEach((q, i) => { U_EMPTY.value[i] = rooms.has(q.r) ? 1 : 0; }); envDirty = performance.now() + 300; },
+    setEmptyRooms,
     sampleLight,
     cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData, uPiece: { value: 1 } }; c.onBeforeCompile = m.onBeforeCompile; c.customProgramCacheKey = m.customProgramCacheKey; return c; },
     addMeshes: (g) => g.traverse((o) => { if (o.isMesh && !meshes.includes(o) && o.material?.userData?.atlas) meshes.push(o); }),
@@ -760,7 +885,9 @@ function updateMap() {
     if (a && a !== state.area && !state.areaLocked) { state.area = a; updateUI(); }
     if (here && envCam) {   // reflections from the room you are in
       const q = ROOMS[here][0]; envCam.position.copy(P((q[0] + q[1]) / 2, (q[2] + q[3]) / 2, 1.3)); envDirty = performance.now() + 400;
-    }
+      const rs = ROOMS[here], x0 = Math.min(...rs.map((r) => r[0])), x1 = Math.max(...rs.map((r) => r[1])), y0 = Math.min(...rs.map((r) => r[2])), y1 = Math.max(...rs.map((r) => r[3]));
+      U_BOX.min.value.set(x0, 0, -y1); U_BOX.max.value.set(x1, CEIL_H, -y0); U_BOX.pos.value.copy(envCam.position); U_BOX.on.value = 1;
+    } else if (!here) U_BOX.on.value = 0;
   }
 }
 function setBusy(on, p = 0) {
@@ -1029,6 +1156,7 @@ function endDrag(e) {
 // ------------------------------------------------------------------ loop
 function resize() {
   const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
   if (eye.on && VIEWS[viewKey]) camera.fov = eyeFov(VIEWS[viewKey].fov);
   camera.updateProjectionMatrix();
 }
@@ -1072,7 +1200,8 @@ function frame(now) {
   if (envDirty && now > envDirty) { envDirty = 0; if (!NOENV) refreshEnv(); }
   if (controls.enabled && !tween) controls.update();
   updateMap();
-  renderer.render(scene, camera);
+  if (composer) { bloom.threshold = 0.85 / renderer.toneMappingExposure; composer.render(); }
+  else renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 init().then(() => requestAnimationFrame(frame)).catch((e) => { console.error(e); $('#veil .veil__en').textContent = 'Could not load the flat: ' + e.message; });
