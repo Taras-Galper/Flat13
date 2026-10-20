@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=11';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=12';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -267,6 +267,10 @@ function lightmapped(mat, atlas) {
         { vec2 q = vLightMapUv;
           // all interior light is baked: drop the live lights (they only light the world outside)
           irradiance = vec3(0.0); reflectedLight.directDiffuse = vec3(0.0); reflectedLight.directSpecular = vec3(0.0);
+          // the reflection probe gives reflections only: its diffuse part would light the room a second time on top of the bake
+          #if defined( USE_ENVMAP ) && defined( STANDARD )
+          iblIrradiance = vec3(0.0);
+          #endif
           ${full.sum}
           vec3 E = EF;
           ${empty ? `{ ${empty.sum}
