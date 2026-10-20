@@ -14,8 +14,8 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 S_DAY = int(argv[0]) if argv else 128
 S_LAMP = int(argv[1]) if len(argv) > 1 else 160
 ONLY = set(argv[2].split(",")) if len(argv) > 2 else None
-# "empty": the shell (and the rugs) baked with the movable furniture taken out, for rooms whose furniture the
-# visitor rearranges in the page. Saved as E<atlas>_<group>.npy next to the normal bakes.
+# "empty": the shell, the built-ins and the rugs baked with the movable furniture taken out, for rooms whose
+# furniture the visitor rearranges in the page. Saved as E<atlas>_<group>.npy next to the normal bakes.
 EMPTY = bool(ONLY and "empty" in ONLY)
 if EMPTY: ONLY.discard("empty"); ONLY = ONLY or None
 # "at:S" (or "at:SL"…) bakes only those atlases
@@ -156,7 +156,8 @@ else:
         if not EMPTY or not o.get("pmov") or o.get("plamp"): return False
         return atlas == "S" or o.get("piece") not in rugs
     for atlas in ATLASES:
-        targets = ATL[atlas] if not EMPTY or atlas == "S" else [o for o in ATL[atlas] if o.get("piece") in rugs]
+        # empty bake of the furniture atlases: everything that stays put (built-ins, curtains, floor lamps) and the rugs
+        targets = ATL[atlas] if not EMPTY or atlas == "S" else [o for o in ATL[atlas] if not o.get("pmov") or o.get("piece") in rugs]
         if not targets: continue
         img = prep_targets(atlas)
         for g in groups:

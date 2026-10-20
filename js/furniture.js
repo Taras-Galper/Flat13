@@ -1,8 +1,8 @@
 // Rearranging the furniture, like a moodboard that builds the room: drag a piece in from the catalog, pick
 // up any loose piece and move it (10 cm grid, it snaps to the walls and never goes through the walls,
 // the built-ins or other furniture), scroll or press Turn to rotate it, Remove it, undo.
-// The light stays right: a rearranged room switches its shell to an "empty room" bake, every piece in it
-// gets a soft contact shadow, and a moved piece takes the brightness of the floor where it now stands.
+// The light stays right: where a piece stood takes the "empty room" bake, its baked floor shadow goes with it,
+// and a moved piece takes the brightness of the floor where it now stands.
 import * as THREE from 'three';
 
 const GRID = 0.1, SNAP = 0.15, STEP = 15;
@@ -130,13 +130,18 @@ export function createFurniture(ctx) {
   const changed = (p) => p.added || p.removed || Math.abs(p.x - p.x0) > 0.005 || Math.abs(p.y - p.y0) > 0.005 || p.rot !== 0;
 
   // ---------------------------------------------------------------- the light follows
-  function refreshShadows() {
-    const rooms = new Set();
-    for (const p of Object.values(P)) if (changed(p)) { rooms.add(p.room); rooms.add(p.room0); }
-    ctx.setEmptyRooms(rooms);
-    for (const p of Object.values(P)) p.shadow.visible = ctx.hasEmpty && rooms.has(p.room) && !p.removed;
-    refreshGains();
+  // where a piece stood gets the empty-room light; where it stands, the floor gets its own baked shadow (see mood.js)
+  function movedList() {
+    const list = [];
+    for (const p of Object.values(P)) {
+      if (!changed(p)) continue;
+      const d = p.def;
+      list.push({ x0: p.x0, y0: p.y0, w: d.w, d: d.d, h: d.h || 1, x: p.x, y: p.y, rot: p.rot,
+        clean: !p.added, shadow: !p.removed && !d.rug });
+    }
+    return list;
   }
+  function refreshShadows() { ctx.setMoved(movedList()); refreshGains(); }
   function refreshGains() {
     anyGain = false;
     for (const p of Object.values(P)) {
@@ -220,7 +225,7 @@ export function createFurniture(ctx) {
     const [x, y] = snap(p, f.x + drag.dx, f.y + drag.dy, p.rot);
     for (const [cx, cy] of [[x, y], [x, p.y], [p.x, y]]) {   // slide along a wall when the straight move is blocked
       const room = fits(p, cx, cy, p.rot);
-      if (room) { place(p, cx, cy, p.rot, room); break; }
+      if (room) { place(p, cx, cy, p.rot, room); ctx.setMoved(movedList()); break; }   // the shadow follows while you drag
     }
   }
   function onPointerUp() {

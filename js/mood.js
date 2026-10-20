@@ -14,7 +14,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=14';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=15';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -267,11 +267,12 @@ function lightSet(A, tag, name) {
   const u = { [`l${tag}A`]: { value: arr.tex }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
   const decl = `uniform sampler2DArray l${tag}A; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
   const at = (i) => `lmDecode(texture(l${tag}A, vec3(q, ${i}.0)).rgb)`;
-  const sum = `vec3 E${tag} = uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)};
+  const body = `vec3 E${tag} = uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)};
           ${arr.grey
     ? arr.files.slice(3).map((f, s) => (f ? `E${tag} += ${at(3 + s)}.r * u${tag}LampW[${s}];` : '')).join('\n          ')
     : Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
-  return { u, decl, sum, NL };
+  const fn = `vec3 lm${tag}(vec2 q) { ${body}\n          return E${tag}; }`;
+  return { u, decl, fn, sum: `vec3 E${tag} = lm${tag}(q);`, NL };
 }
 // reflections fitted to the room you are in: the probe's directions are traced to the room's walls (box projection),
 // so the floor and the oak reflect the window and the lamps where they really are
@@ -279,18 +280,34 @@ const U_BOX = { min: { value: new THREE.Vector3() }, max: { value: new THREE.Vec
 const ENV_PARS = THREE.ShaderChunk.envmap_physical_pars_fragment.replace(
   'reflectVec = inverseTransformDirection( reflectVec, viewMatrix );',
   'reflectVec = inverseTransformDirection( reflectVec, viewMatrix ); reflectVec = boxProject( reflectVec );');
-// rooms whose furniture was rearranged switch their shell (and rugs) to the "empty room" bake: one flag per room rectangle
-const U_EMPTY = { value: new Float32Array(NR) };
+// Moved furniture: where a piece stood, the shell, the built-ins and the rugs take the "empty room" bake; where it
+// stands now, the floor gets the piece's own baked shadow, read where it used to stand (the floor's lightmap is a
+// plain top view of the plan, so a point of the plan maps to it directly). Pieces that stay keep their exact bake.
+const NMOV = 12;   // moved pieces the light follows (more than that: the first twelve)
+const U_MOV = {
+  a: { value: Array.from({ length: NMOV }, () => new THREE.Vector4()) },   // where it stood: centre x, y, half width, half depth
+  b: { value: Array.from({ length: NMOV }, () => new THREE.Vector4()) },   // where it stands: centre x, y, cos, sin of its turn
+  c: { value: Array.from({ length: NMOV }, () => new THREE.Vector4()) },   // height, clean the old spot, shadow at the new spot
+  n: { value: 0 },
+  floor: { value: new THREE.Vector4(1, 0, 1, 0) },                          // plan → floor lightmap: u = x·a + b, v = y·c + d
+  rugs: { value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, -1, -1)) },   // where the rugs lie in the bake
+};
+const MOV_GLSL = `uniform vec4 uMovA[${NMOV}], uMovB[${NMOV}], uMovC[${NMOV}]; uniform int uMovN; uniform vec4 uFloorLM; uniform vec4 uRugs[8];
+        float underRug(vec2 p) { float k = 0.0; for (int i = 0; i < 8; i++) { vec2 d = abs(p - uRugs[i].xy) - uRugs[i].zw; k = max(k, 1.0 - smoothstep(-0.04, 0.04, max(d.x, d.y))); } return k; }
+        float movW(vec2 l, vec2 he, float z, float h) {   // 1 within 25 cm of the footprint, fading out over 30 cm more
+          vec2 d = max(abs(l) - he - 0.25, 0.0); return 1.0 - smoothstep(0.0, 0.3, length(vec3(d, max(z - h - 0.25, 0.0)))); }`;
 
 function lightmapped(mat, atlas) {
   const A = MANIFEST.atlases[atlas];
   const full = lightSet(A, 'F', atlas);
   const EA = MANIFEST.atlases['E' + atlas];
-  const empty = EA && (atlas === 'S' || mat.userData.rug) ? lightSet(EA, 'E', 'E' + atlas) : null;
+  // the empty-room bake covers the shell and the rugs, and (when the bake has them, "builtins") what stays put in the rooms
+  const empty = EA && (atlas === 'S' || mat.userData.rug || (mat.userData.still && EA.builtins)) ? lightSet(EA, 'E', 'E' + atlas) : null;
+  const floorLM = !!mat.userData.floorLM && !!empty;
   mat.lightMap = BLACK; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
   mat.userData.atlas = atlas;
   mat.userData.uPiece = mat.userData.uPiece || { value: 1 };       // a moved piece of furniture takes the light of where it now stands
-  const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri, rects = wall || !!empty;
+  const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri, rects = wall;
   mat.onBeforeCompile = function (sh) {
     const ud = this.userData;
     Object.assign(sh.uniforms, full.u, empty ? empty.u : {}, {
@@ -298,7 +315,8 @@ function lightmapped(mat, atlas) {
       uTint: ud.uTint || { value: new THREE.Color(1, 1, 1) }, uTintAmt: ud.uTintAmt || { value: 0 },
       uBoxMin: U_BOX.min, uBoxMax: U_BOX.max, uBoxPos: U_BOX.pos, uBoxOn: U_BOX.on,
     });
-    if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A }, uRectE: U_EMPTY });
+    if (rects) Object.assign(sh.uniforms, { uRects: { value: RECT_U }, uRectA: { value: RECT_A } });
+    if (empty) Object.assign(sh.uniforms, { uMovA: U_MOV.a, uMovB: U_MOV.b, uMovC: U_MOV.c, uMovN: U_MOV.n, uFloorLM: U_MOV.floor, uRugs: U_MOV.rugs });
     if (wall) Object.assign(sh.uniforms, { uWallCol: ud.uWallCol, uWallBase: ud.uWallBase });
     if (planar) Object.assign(sh.uniforms, { uTri: ud.uTri, uTriRot: ud.uTriRot, uTexAdj: ud.uTexAdj, uTexTint: ud.uTexTint, uGrout: ud.uGrout || { value: new THREE.Vector3() }, uRelief: U.relief });
     sh.vertexShader = sh.vertexShader
@@ -316,7 +334,7 @@ function lightmapped(mat, atlas) {
           if (uBoxOn < 0.5 || any(lessThan(vWP, uBoxMin - 0.02)) || any(greaterThan(vWP, uBoxMax + 0.02))) return v;
           vec3 a = (uBoxMax - vWP) / v, b = (uBoxMin - vWP) / v, f = max(a, b);
           return vWP + v * min(min(f.x, f.y), f.z) - uBoxPos; }
-        ${rects ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}]; uniform float uRectE[${NR}];
+        ${rects ? `uniform vec4 uRects[${NR}]; uniform int uRectA[${NR}];
         // which room rectangle this side of a surface is in (a step along the normal, into the room)
         int rectOf() { vec3 qp = vWP + normalize(vWN) * 0.08; vec2 pl = vec2(qp.x, -qp.z); int ri = -1;
           for (int i = 0; i < ${NR}; i++) { vec4 r = uRects[i]; if (pl.x >= r.x && pl.x <= r.y && pl.y >= r.z && pl.y <= r.w) ri = i; }
@@ -338,7 +356,9 @@ function lightmapped(mat, atlas) {
           vec3 sp = bp * uTri.y;
           return texture2D(t, vec2(sp.y, 1.0 - sp.z)) * bn.x + texture2D(t, vec2(sp.x, 1.0 - sp.z)) * bn.y + texture2D(t, vec2(sp.x, 1.0 - sp.y)) * bn.z;
         }` : ''}
-        vec3 lmDecode(vec3 t) { return pow(t, vec3(2.2)); }`)
+        vec3 lmDecode(vec3 t) { return pow(t, vec3(2.2)); }
+        ${full.fn}
+        ${empty ? empty.fn + '\n        ' + MOV_GLSL : ''}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         { float l = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
           diffuseColor.rgb = mix(diffuseColor.rgb, uTint * (0.35 + 1.3 * l), uTintAmt); }
@@ -359,9 +379,21 @@ function lightmapped(mat, atlas) {
           ${full.sum}
           vec3 E = EF;
           ${empty ? `{ ${empty.sum}
-            int ri = rectOf(); float e = 0.0;
-            for (int i = 0; i < ${NR}; i++) if (i == ri) e = uRectE[i];
-            E = mix(EF, EE, e); }` : ''}
+            vec2 pl = vec2(vWP.x, -vWP.z); float e = 0.0;
+            for (int i = 0; i < ${NMOV}; i++) { if (i >= uMovN) break;
+              if (uMovC[i].y > 0.5) e = max(e, movW(pl - uMovA[i].xy, uMovA[i].zw, vWP.y, uMovC[i].x)); }
+            E = mix(EF, EE, e);
+            ${floorLM ? `for (int i = 0; i < ${NMOV}; i++) { if (i >= uMovN) break;
+              if (uMovC[i].z < 0.5) continue;
+              vec2 d = pl - uMovB[i].xy, l = vec2(uMovB[i].z * d.x + uMovB[i].w * d.y, -uMovB[i].w * d.x + uMovB[i].z * d.y);
+              float w = movW(l, uMovA[i].zw, 0.0, 1.0); if (w <= 0.0) continue;
+              vec2 p0 = uMovA[i].xy + l, q0 = vec2(p0.x * uFloorLM.x + uFloorLM.y, p0.y * uFloorLM.z + uFloorLM.w);
+              const vec3 LUM = vec3(0.2126, 0.7152, 0.0722);   // one ratio for all three colours: no coloured specks
+              vec3 r = vec3(clamp(dot(lmF(q0), LUM) / max(dot(lmE(q0), LUM), 1e-4), 0.25, 1.0));   // the piece's shadow where it stood
+              // …except where a rug lay over the floor in the bake (dark under the rug, not shadow): a soft contact shadow there
+              vec2 dd = abs(l) - uMovA[i].zw; float soft = mix(0.5, 1.0, smoothstep(-0.08, 0.3, max(dd.x, dd.y)));
+              r = mix(r, vec3(soft), underRug(p0));
+              E *= mix(vec3(1.0), r, w); }` : ''} }` : ''}
           E += vec3(uFlat);
           ${planar ? 'E *= relief;' : ''}
           irradiance += E * uGrade * uGain * uPiece * PI; }`);
@@ -414,7 +446,7 @@ function lightmapped(mat, atlas) {
         #endif`);
     sh.fragmentShader = fs;
   };
-  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '');
+  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '') + (floorLM ? 'F' : '');
   mat.needsUpdate = true;
 }
 
@@ -534,6 +566,17 @@ function applyMood(id) {
 const moodOf = (area) => (MOODS.find((m) => CATS.every((c) => m.picks[c] === state.picks[area][c])) || {}).id;
 
 // ------------------------------------------------------------------ load
+const floorFit = [];
+function fitFloorLM() {   // least squares, per axis: u = a·x + b, v = c·y + d
+  const sx = [0, 0, 0, 0, 0], sy = [0, 0, 0, 0, 0], v = new THREE.Vector3();
+  const add = (S, x, u) => { S[0]++; S[1] += x; S[2] += u; S[3] += x * x; S[4] += x * u; };
+  for (const o of floorFit) {
+    o.updateMatrixWorld(true); const P = o.geometry.attributes.position, T = o.geometry.attributes.uv1; if (!T) continue;
+    for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld); add(sx, v.x, T.getX(i)); add(sy, -v.z, T.getY(i)); }
+  }
+  const solve = (S) => { const a = (S[0] * S[4] - S[1] * S[2]) / (S[0] * S[3] - S[1] * S[1]); return [a, (S[2] - a * S[1]) / S[0]]; };
+  if (sx[0] > 3) { const [a, b] = solve(sx), [c, d] = solve(sy); U_MOV.floor.value.set(a, b, c, d); }
+}
 function prepare(root, atlas) {
   const matCopies = new Map();
   root.traverse((o) => {
@@ -548,7 +591,8 @@ function prepare(root, atlas) {
     const paper = /^(Washi|Rice paper|VIDJA shade)/.test(m.name);
     const fam = paper ? (src.match(/^(Pendant kitchen|Pendant living|VIDJA|HOLMO|KUDDLAVA)/) || [''])[0] : '';
     // meshes in a swappable category get their own material per area (so a sample changes only that room)
-    const key = m.uuid + (cat && cat !== 'walls' ? cat + area : cat || '') + fam + (rug ? 'rug' : '');
+    const still = atlas !== 'S' && !(pdef && pdef.movable), floorLM = atlas === 'S' && src === 'Floor flat';
+    const key = m.uuid + (cat && cat !== 'walls' ? cat + area : cat || '') + fam + (rug ? 'rug' : '') + (still ? 'still' : '') + (floorLM ? 'floor' : '');
     if (!matCopies.has(key)) {
       const mm = m.clone(); mm.userData.orig = { map: m.map, normalMap: m.normalMap, roughnessMap: m.roughnessMap, color: m.color.clone() };
       mm.userData.uTint = { value: new THREE.Color(1, 1, 1) }; mm.userData.uTintAmt = { value: 0 };
@@ -567,7 +611,7 @@ function prepare(root, atlas) {
         mm.userData.uWallCol = { value: AREA_KEYS.map(() => m.color.clone()) };
         mm.color.set(0xffffff); wallMats.push(mm);
       }
-      mm.userData.rug = rug;
+      mm.userData.rug = rug; mm.userData.still = still; mm.userData.floorLM = floorLM;
       lightmapped(mm, atlas);
       if (paper) {
         // paper shades glow from the lamp inside them: which circuit depends on the fitting
@@ -588,6 +632,7 @@ function prepare(root, atlas) {
     o.userData.category = cat; o.userData.area = area; o.userData.src = src; o.userData.piece = ud.piece || null;
     meshes.push(o);
     if (atlas === 'S' && /^Floor /.test(src)) floorMeshes.push(o);
+    if (floorLM) floorFit.push(o);
     if (/^Ceiling/.test(src)) { ceilings.push(o); o.visible = viewKey !== 'overview'; }
   });
 }
@@ -596,6 +641,7 @@ function loadPart(atlas, onProgress) {
   return new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder).loadAsync(BASE + A.glb, (e) => onProgress && e.total && onProgress(e.loaded / e.total))
     .then((gltf) => {
       prepare(gltf.scene, atlas); scene.add(gltf.scene); parts[atlas] = gltf.scene;
+      if (atlas === 'S') fitFloorLM();
       if (FURN && atlas !== 'S') { const list = []; gltf.scene.traverse((o) => { if (o.isMesh) list.push(o); }); FURN.addMeshes(list); }
       return gltf.scene;
     });
@@ -611,6 +657,7 @@ async function init() {
     for (const [k, c] of Object.entries(L.circuits)) CCT[k] = c.cct;
   } catch (e) { console.warn('lighting plan not found', e); }
   try { PIECE_DEFS = Object.fromEntries((await (await fetch(vurl(BASE + 'pieces.json'))).json()).map((d) => [d.id, d])); } catch (e) { console.warn('no furniture pieces'); }
+  Object.values(PIECE_DEFS).filter((d) => d.rug && /rug|runner/i.test(d.name)).slice(0, 8).forEach((d, i) => U_MOV.rugs.value[i].set(d.cx, d.cy, d.w / 2, d.d / 2));
   FURN = createFurniture(furnitureCtx());
   const order = (MANIFEST.order || Object.keys(MANIFEST.atlases)).filter((a) => MANIFEST.atlases[a]?.glb);
   const first = order.filter((a) => a !== 'R'), later = order.filter((a) => a === 'R');
@@ -667,17 +714,26 @@ function sampleLight(px, py) {
   }
   return 0.2126 * E[0] + 0.7152 * E[1] + 0.0722 * E[2];
 }
-// rooms whose furniture was moved switch to the empty-room light, which is fetched the first time it is needed
-let emptyState = 0, wantEmpty = new Set();
-function applyEmpty() { RECTS.forEach((q, i) => { U_EMPTY.value[i] = wantEmpty.has(q.r) ? 1 : 0; }); envDirty = performance.now() + 300; }
-function setEmptyRooms(rooms) {
-  wantEmpty = new Set(rooms);
-  if (emptyState === 2 || !wantEmpty.size) return applyEmpty();
+// pieces that moved: the empty-room light (fetched the first time it is needed) where they stood, their shadow where they are
+let emptyState = 0, moved = [];
+function applyMoved() {
+  const list = moved.slice(0, NMOV);
+  list.forEach((p, i) => {
+    U_MOV.a.value[i].set(p.x0, p.y0, p.w / 2, p.d / 2);
+    const r = (p.rot * Math.PI) / 180; U_MOV.b.value[i].set(p.x, p.y, Math.cos(r), Math.sin(r));
+    U_MOV.c.value[i].set(p.h, p.clean ? 1 : 0, p.shadow ? 1 : 0, 0);
+  });
+  U_MOV.n.value = emptyState === 2 ? list.length : 0;
+  envDirty = performance.now() + 300;
+}
+function setMoved(list) {
+  moved = list;
+  if (emptyState === 2 || !moved.length) return applyMoved();
   if (emptyState === 1) return;
   emptyState = 1;
   const E = Object.entries(MANIFEST.atlases).filter(([k, A]) => /^E/.test(k) && A.arr);
   Promise.all([...E.map(([, A]) => A.arr.load()), loadLum(MANIFEST.atlases.ES || MANIFEST.atlases.S)])
-    .then(() => { emptyState = 2; applyEmpty(); if (FURN) FURN.refreshGains(); });
+    .then(() => { emptyState = 2; applyMoved(); if (FURN) FURN.refreshGains(); });
 }
 const visibleDeep = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
 function furnitureCtx() {
@@ -690,7 +746,7 @@ function furnitureCtx() {
       return ray.intersectObjects(meshes, false).find((h) => visibleDeep(h.object) && !h.object.material.transparent) || null;
     },
     get hasEmpty() { return !!MANIFEST.atlases.ES; },
-    setEmptyRooms,
+    setMoved,
     sampleLight,
     cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData, uPiece: { value: 1 } }; c.onBeforeCompile = m.onBeforeCompile; c.customProgramCacheKey = m.customProgramCacheKey; return c; },
     addMeshes: (g) => g.traverse((o) => { if (o.isMesh && !meshes.includes(o) && o.material?.userData?.atlas) meshes.push(o); }),
