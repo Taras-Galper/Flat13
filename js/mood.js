@@ -14,8 +14,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=17';
-import { createOpenings } from './openings.js?v=17';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=18';
+import { createOpenings } from './openings.js?v=18';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -514,7 +514,7 @@ function applyLight() {
   const t = state.time, i0 = Math.floor(Math.min(t, 2.999)), f = t - i0, a = TIMES[i0], b = TIMES[Math.min(3, i0 + 1)];
   const mix = (x, y) => x + (y - x) * f;
   U.dayW.value.set(mix(a.day[0], b.day[0]), mix(a.day[1], b.day[1]), mix(a.day[2], b.day[2]));
-  U.sheer.value = 0.45 * U.dayW.value.x + 0.7 * U.dayW.value.y + 0.06 * U.dayW.value.z;
+  U.sheer.value = 0.6 * U.dayW.value.x + 0.9 * U.dayW.value.y + 0.015 * U.dayW.value.z;   // the sky behind the glass: next to nothing after dusk
   // the eye adapts: dim scenes (the 5% night path, the film glow) get a little more exposure, as they would in the room
   const ADAPT = { night: 2.2, film: 0.7, view: 0.6, bedtime: 0.4 };
   const adapt = t >= 1.6 ? ADAPT[state.scene] || 0 : 0;
@@ -658,7 +658,7 @@ function prepare(root, atlas) {
       if (mm.metalness > 0.5 && !mm.metalnessMap && !/steel|mirror|chrome|brass|metal|alumin/i.test(m.name)) mm.metalness = 0;
       if (/^(Glass|Balustrade glass)/.test(m.name)) { mm.transparent = true; mm.opacity = /^Bal/.test(m.name) ? 0.2 : 0.12; mm.depthWrite = false; mm.metalness = 0; mm.roughness = 0.05; }
       if (/^Mirror/.test(m.name)) { mm.metalness = 1; mm.roughness = 0.04; mm.color.set(0xd8d8d8); }
-      if (/^Linen sheer/.test(m.name)) { mm.transparent = true; mm.opacity = 0.82; mm.side = THREE.DoubleSide; }
+      if (/^Linen sheer/.test(m.name)) { mm.transparent = true; mm.opacity = 0.82; mm.side = THREE.DoubleSide; mm.color.setHex(0xb8b0a2); }   // linen, not paper white: the curtain wash at night blew it out
       matCopies.set(key, mm);
       if (cat && cat !== 'walls' && area) (byCatArea[`${cat}:${area}`] ||= []).push(mm);
     }
