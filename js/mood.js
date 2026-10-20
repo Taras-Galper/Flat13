@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=10';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=11';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -146,13 +146,41 @@ const VER = new URL(import.meta.url).searchParams.get('v') || 'dev';
 const vurl = (u) => (/^(data|blob):/.test(u) ? u : u + (u.includes('?') ? '&' : '?') + 'v=' + VER);
 const manager = new THREE.LoadingManager(); manager.setURLModifier(vurl);
 const texLoader = new THREE.TextureLoader(manager);
-const lmTex = {};
-function loadLM(file) {
-  if (!lmTex[file]) {
-    const t = texLoader.load(BASE + file); t.colorSpace = THREE.NoColorSpace; t.flipY = false; t.channel = 1;
-    t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; lmTex[file] = t;
-  }
-  return lmTex[file];
+// The light maps of one atlas (3 times of day + the lamp maps) go into ONE texture array: most graphics cards
+// (and Chrome on Windows) allow only 16 textures per shader, and the shell with its "empty room" light needed 14
+// separate maps on top of the material's own textures, so its shader failed and the floor was not drawn at all.
+const lmBitmaps = {}, lumCache = {};
+function lmBitmap(file) {
+  return (lmBitmaps[file] = lmBitmaps[file] || fetch(vurl(BASE + file)).then((r) => r.blob())
+    .then((b) => createImageBitmap(b, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' })));
+}
+function lmArray(A) {
+  if (A.arr) return A.arr;
+  const files = [...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].file : null)), ...lampFiles(A)];
+  const tex = new THREE.DataArrayTexture(null, 1, 1, files.length);       // a stand-in: the GL texture behind it is made here
+  const gl = renderer.getContext(), glTex = gl.createTexture();
+  const p = renderer.properties.get(tex); p.__webglTexture = glTex; p.__webglInit = true;
+  A.arr = { tex, files };
+  Promise.all(files.map((f) => (f ? lmBitmap(f) : null))).then((bms) => {
+    const size = bms.find(Boolean)?.width || 1, levels = Math.floor(Math.log2(size)) + 1;
+    renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, size, size, files.length);   // starts black: missing maps stay black
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    bms.forEach((bm, i) => { if (bm && bm.width === size) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, size, size, 1, gl.RGBA, gl.UNSIGNED_BYTE, bm); });
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const an = gl.getExtension('EXT_texture_filter_anisotropic'); if (an) gl.texParameterf(gl.TEXTURE_2D_ARRAY, an.TEXTURE_MAX_ANISOTROPY_EXT, 4);
+    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    // a small CPU copy of each map, to read the light on the floor under a moved piece
+    bms.forEach((bm, i) => { if (bm && files[i] && !lumCache[files[i]]) {
+      const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(bm, 0, 0, 256, 256); lumCache[files[i]] = g.getImageData(0, 0, 256, 256).data; } });
+    bms.forEach((bm) => bm && bm.close && bm.close()); files.forEach((f) => f && delete lmBitmaps[f]);
+    envDirty = performance.now();
+  }).catch((e) => console.warn('light maps failed to load', e));
+  return A.arr;
 }
 const BLACK = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); BLACK.needsUpdate = true; BLACK.channel = 1;
 const lampFiles = (A) => [...new Set(Object.values(A.channels).map((c) => c.file))].sort();
@@ -164,15 +192,14 @@ const RECT_A = RECTS.map(({ a }) => a);
 function lightSet(A, tag) {
   const files = lampFiles(A), NL = Math.max(1, files.length);
   A.lampW = A.lampW || Array.from({ length: NL * 3 }, () => new THREE.Vector3());
-  const day = MANIFEST.day.map((g) => (A.maps[g] ? loadLM(A.maps[g].file) : BLACK));
+  const arr = lmArray(A);
   const dayS = new THREE.Vector3(...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].scale : 0)));
-  const lamps = Array.from({ length: NL }, (_, i) => (files[i] ? loadLM(files[i]) : BLACK));
-  const u = { [`l${tag}D0`]: { value: day[0] }, [`l${tag}D1`]: { value: day[1] }, [`l${tag}D2`]: { value: day[2] }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
-  lamps.forEach((t, i) => { u[`l${tag}L${i}`] = { value: t }; });
-  const decl = `uniform sampler2D l${tag}D0, l${tag}D1, l${tag}D2, ${lamps.map((_, i) => `l${tag}L${i}`).join(', ')}; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
-  const sum = `vec3 E${tag} = uDayW.x * l${tag}DS.x * lmDecode(texture2D(l${tag}D0, q).rgb) + uDayW.y * l${tag}DS.y * lmDecode(texture2D(l${tag}D1, q).rgb) + uDayW.z * l${tag}DS.z * lmDecode(texture2D(l${tag}D2, q).rgb);
-          ${lamps.map((_, i) => `{ vec3 t = lmDecode(texture2D(l${tag}L${i}, q).rgb); E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
-  return { u, decl, sum, first: day[0], NL };
+  const u = { [`l${tag}A`]: { value: arr.tex }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
+  const decl = `uniform sampler2DArray l${tag}A; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
+  const at = (i) => `lmDecode(texture(l${tag}A, vec3(q, ${i}.0)).rgb)`;
+  const sum = `vec3 E${tag} = uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)};
+          ${Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
+  return { u, decl, sum, NL };
 }
 // rooms whose furniture was rearranged switch their shell (and rugs) to the "empty room" bake: one flag per room rectangle
 const U_EMPTY = { value: new Float32Array(NR) };
@@ -182,7 +209,7 @@ function lightmapped(mat, atlas) {
   const full = lightSet(A, 'F');
   const EA = MANIFEST.atlases['E' + atlas];
   const empty = EA && (atlas === 'S' || mat.userData.rug) ? lightSet(EA, 'E') : null;
-  mat.lightMap = full.first; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
+  mat.lightMap = BLACK; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
   mat.userData.atlas = atlas;
   mat.userData.uPiece = mat.userData.uPiece || { value: 1 };       // a moved piece of furniture takes the light of where it now stands
   const wall = !!mat.userData.uWallCol, planar = !!mat.userData.uTri, rects = wall || !!empty;
@@ -505,14 +532,7 @@ async function init() {
 }
 
 // ------------------------------------------------------------------ what the furniture editor needs from the page
-const lumCache = {};
-function lmPixels(file) {   // a small CPU copy of a lightmap, to read the light on the floor under a piece
-  if (lumCache[file]) return lumCache[file];
-  const img = lmTex[file]?.image; if (!img || !img.width) return null;
-  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
-  g.drawImage(img, 0, 0, 256, 256);
-  return (lumCache[file] = g.getImageData(0, 0, 256, 256).data);
-}
+const lmPixels = (file) => lumCache[file] || null;   // made when the maps load (lmArray)
 const downRay = new THREE.Raycaster();
 function sampleLight(px, py) {
   downRay.set(V(px, 1.2, -py), V(0, -1, 0)); downRay.far = 2;
