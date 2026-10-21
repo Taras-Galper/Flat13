@@ -26,11 +26,14 @@ const M = JSON.parse(fs.readFileSync(MAN, 'utf8'));
 const lampFiles = (A) => [...new Set(Object.values(A.channels).map((c) => c.file))].sort();
 
 async function raw(file) { const { data, info } = await sharp(path.join(MOOD, file)).removeAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height }; }
+const UASTC = args.includes('--uastc');
 async function encode(rgba, w, h, q, out) {
   // the encoder takes PNG bytes; mipmaps are made here, since compressed textures cannot make their own
   const png = await sharp(Buffer.from(rgba), { raw: { width: w, height: h, channels: 4 } }).png({ compressionLevel: 1 }).toBuffer();
   const k = await encodeToKTX2(new Uint8Array(png), {
-    isUASTC: false, generateMipmap: true, qualityLevel: q, compressionLevel: 4, isPerceptual: false, isSetKTX2SRGBTransferFunc: false,
+    ...(UASTC ? { isUASTC: true, uastcLDRQualityLevel: 2, needSupercompression: true, enableRDO: true, rdoQualityLevel: Number(process.env.RDO || 4) }
+              : { isUASTC: false, qualityLevel: q, compressionLevel: 4 }),
+    generateMipmap: true, isPerceptual: false, isSetKTX2SRGBTransferFunc: false,
     imageDecoder: async (buf) => { const r = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); return { data: new Uint8Array(r.data), width: r.info.width, height: r.info.height }; },
   });
   fs.writeFileSync(path.join(MOOD, out), k); return k.length;
@@ -53,7 +56,16 @@ for (const [a, A] of Object.entries(M.atlases)) for (const [g, c] of Object.entr
 
 const tasks = [];
 const sizes = new Set();
-for (const [a, A] of Object.entries(M.atlases)) {
+// --uastc: UASTC (BC7 on desktops, ASTC on phones, 8 bits a texel: no coloured blocks in dim light; but ~9× the download
+// of the WebP maps, 6.6 MB for the shell alone, so not used yet), the same layers
+// as the WebP maps (three lamp groups to a layer), written as <file>.u.ktx2 and listed per atlas as "ktxu"
+if (UASTC) for (const [a, A] of Object.entries(M.atlases)) {
+  if (only.length && !only.includes(a)) continue;
+  const files = [...M.day.map((g) => A.maps[g]?.file || null), ...lampFiles(A)];
+  A.ktxu = files.map((f) => (f ? f.replace(/\.webp$/, '.u.ktx2') : null));
+  files.forEach((f, i) => { if (f) tasks.push(async () => { const { data, w, h } = await raw(f); sizes.add(w); return [A.ktxu[i], await encode(rgbaOf(data, w, h, -1), w, h, 0, A.ktxu[i])]; }); });
+}
+else for (const [a, A] of Object.entries(M.atlases)) {
   if (only.length && !only.includes(a)) continue;
   const files = lampFiles(A), layers = [];
   for (const g of M.day) {
@@ -75,7 +87,7 @@ await Promise.all(Array.from({ length: jobs }, async () => {
   while (next < tasks.length) { const t = tasks[next++]; const [f, n] = await t(); total += n; console.log(f, (n / 1024).toFixed(0) + ' KB'); }
 }));
 // black layers, for left-out groups (an all-zero compressed block is not black in every format)
-M.black = M.black || {};
-for (const w of sizes) { const out = `lm/black_${w}.ktx2`; const z = new Uint8Array(w * w * 4); for (let i = 3; i < z.length; i += 4) z[i] = 255; total += await encode(z, w, w, 1, out); M.black[w] = out; }
+const BK = UASTC ? 'blacku' : 'black'; M[BK] = M[BK] || {};
+for (const w of sizes) { const out = `lm/black_${w}${UASTC ? '.u' : ''}.ktx2`; const z = new Uint8Array(w * w * 4); for (let i = 3; i < z.length; i += 4) z[i] = 255; total += await encode(z, w, w, 1, out); M[BK][w] = out; }
 fs.writeFileSync(MAN, JSON.stringify(M, null, 1));
 console.log('KTX2 total', (total / 1048576).toFixed(1), 'MB');
