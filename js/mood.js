@@ -13,8 +13,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=23';
-import { createOpenings } from './openings.js?v=23';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=24';
+import { createOpenings } from './openings.js?v=24';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -1254,7 +1254,20 @@ function hitTarget(x, y) {
 }
 function startDrag(e) {
   const card = e.target.closest('.card'); if (!card) return;
-  e.preventDefault();
+  // on phones the cards sit in a row you swipe sideways: a sideways swipe scrolls the row, pulling a card up drags it,
+  // a tap applies it (a sample) or puts it in front of you (a piece of furniture)
+  if (e.pointerType === 'touch' && PHONE.matches) {
+    const x0 = e.clientX, y0 = e.clientY;
+    const off = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', off); };
+    const mv = (ev) => { const dy = Math.abs(ev.clientY - y0); if (dy > 10 && dy > Math.abs(ev.clientX - x0)) { off(); beginDrag(card, ev); } };
+    const up = () => { off(); if (card.classList.contains('fcard')) FURN.addInView(card.dataset.src); else applySample(state.area, card.dataset.cat, card.dataset.id); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', off);
+    return;
+  }
+  e.preventDefault(); beginDrag(card, e);
+}
+const PHONE = matchMedia('(max-width: 760px)');
+function beginDrag(card, e) {
   if (card.classList.contains('fcard')) {
     const ghost = card.cloneNode(true); ghost.classList.add('ghost'); document.body.appendChild(ghost);
     return FURN.startCardDrag(e, card.dataset.src, ghost);

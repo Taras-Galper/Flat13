@@ -120,7 +120,8 @@ body.mood-page { overflow: hidden; height: 100vh; }
 @media (max-width: 760px) {
   .mood-page .mast { left: 10px; top: 10px; right: 10px; }
   .panel { display: none; width: auto; left: 10px; right: 10px; top: auto; bottom: 64px; max-height: 52vh; }
-  body.sheet-samples .panel--samples, body.sheet-light .panel--light, body.sheet-plan .panel--plan { display: block; }
+  body.sheet-light .panel--light, body.sheet-plan .panel--plan { display: block; }
+  body.sheet-samples .panel--samples { display: flex; }
   .panel--plan { width: auto; left: 10px; right: 10px; overflow: auto; }
   .panel--plan .plan { max-width: 340px; margin: 0 auto; }
   .mbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; position: fixed; z-index: 4; left: 10px; right: 10px; bottom: 10px; }
@@ -129,9 +130,18 @@ body.mood-page { overflow: hidden; height: 100vh; }
   .mbar button span { font: 400 9.5px/1.2 var(--mono); color: var(--ink-2); text-transform: uppercase; letter-spacing: .1em; }
   .mbar button.is-on { background: var(--ink); color: var(--paper); }
   .mbar button.is-on span { color: var(--paper); }
-  .tray { grid-template-columns: repeat(3, 1fr); }
-  .moods { grid-template-columns: repeat(3, 1fr); }
-  .card i { height: 40px; }
+  /* the samples first, and the moods and cards as rows you swipe sideways: more of the room stays in view */
+  .panel { max-height: 44vh; }
+  .panel--samples { flex-direction: column; }
+  .panel--samples > * { order: 9; }
+  .panel--samples > .area { order: 1; } .panel--samples > .t-samples { order: 2; } .panel--samples > .tabs { order: 3; }
+  .panel--samples > .tray { order: 4; } .panel--samples > .t-moods { order: 5; } .panel--samples > .moods { order: 6; } .panel--samples > .check { order: 7; }
+  .tray, .moods { display: flex; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding-bottom: 2px; flex: none; }
+  .tray::-webkit-scrollbar, .moods::-webkit-scrollbar { display: none; }
+  .tray .card { flex: 0 0 96px; touch-action: pan-x; }
+  .tray > .panel__note { flex: 1 0 100%; }
+  .moods button { flex: 0 0 122px; }
+  .card i { height: 44px; }
   .board__body { grid-template-columns: 1fr; padding: 12px; }
   .board__sw { grid-template-columns: repeat(2, 1fr); }
   .board__foot { grid-template-columns: 1fr; }

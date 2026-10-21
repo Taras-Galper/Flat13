@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Make it yours · דירה בקומה 13</title>
-<link rel="stylesheet" href="css/style.css?v=23">
-<link rel="stylesheet" href="css/mood.css?v=23">
+<link rel="stylesheet" href="css/style.css?v=24">
+<link rel="stylesheet" href="css/mood.css?v=24">
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
@@ -24,18 +24,18 @@
   <aside class="panel panel--samples" dir="ltr" aria-label="Samples">
     <label class="area"><span class="panel__title"><span dir="rtl">מעצבים את</span> Styling</span>
       <select id="area" aria-label="Room you are styling"></select></label>
-    <div class="panel__title"><span dir="rtl">אווירה</span> Moods</div>
+    <div class="panel__title t-moods"><span dir="rtl">אווירה</span> Moods</div>
     <div class="moods" id="moods"></div>
     <label class="check"><input type="checkbox" id="everywhere"> <span>Apply a mood to every room</span></label>
-    <div class="panel__title"><span dir="rtl">דוגמאות</span> Samples</div>
+    <div class="panel__title t-samples"><span dir="rtl">דוגמאות</span> Samples</div>
     <div class="tabs" id="sampleTabs"></div>
     <div class="tray" id="tray"></div>
-    <p class="panel__note only-samples">Drag a sample onto a wall, floor or piece of furniture in any room, or click it to style the room you are in.</p>
+    <p class="panel__note only-samples">Drag a sample onto a wall, floor or piece of furniture in any room, or tap it to style the room you are in.</p>
     <div class="furnbar only-furn">
       <button class="cmpbtn" id="furnUndo" type="button"><b dir="rtl">ביטול</b><span>Undo · Ctrl Z</span></button>
       <button class="cmpbtn" id="furnReset" type="button"><b dir="rtl">כמו בתכנון</b><span>Reset furniture</span></button>
     </div>
-    <p class="panel__note only-furn">Drag a piece into the room, or click it to put it in front of you. Pick up any piece to move it; scroll while holding it to turn it. It snaps to a 10&nbsp;cm grid and to the walls.</p>
+    <p class="panel__note only-furn">Drag a piece into the room (on a phone, pull it up out of the row), or tap it to put it in front of you. Pick up any piece to move it; turn it with Turn, or scroll while holding it. It snaps to a 10&nbsp;cm grid and to the walls.</p>
   </aside>
 
   <aside class="panel panel--light" dir="ltr" aria-label="Light">
@@ -90,6 +90,6 @@
     <div class="veil__p"><i></i></div>
   </div></div>
 
-  <script type="module" src="js/mood.js?v=23"></script>  <!-- bump v (here and in js/mood.js) with every release -->
+  <script type="module" src="js/mood.js?v=24"></script>  <!-- bump v (here and in js/mood.js) with every release -->
 </body>
 </html>
