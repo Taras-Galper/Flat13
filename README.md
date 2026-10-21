@@ -38,6 +38,14 @@ then open `http://localhost:8000/`. (Opening `index.html` straight from disk doe
 | `design/` | the Japandi scheme and the lighting plan (circuits, fittings, scenes) |
 | `blender/*.py`, `tools/` | the pipeline that builds, bakes and packs it |
 
+## Before a deploy
+
+```
+node tools/check.mjs        # needs: npm i playwright (in tools/)
+```
+
+It checks that every file the page loads carries the same release version (`?v=` in `index.html` and the imports in `js/mood.js`) and that the version was raised if anything changed since the last push. Then it loads the page in headless Chromium with a piece moved, a door shut and the sheers drawn, and makes sure no shader needs more than the 16 textures most graphics cards and phones allow (Chrome on Windows refuses such a shader, and that part of the flat is simply not drawn), and that the console stays clean.
+
 ## Rebuild
 
 Needs Blender 5.2 with an NVIDIA GPU, Python 3 with `numpy scipy pillow oidn`, Node with `@gltf-transform/core @gltf-transform/extensions @gltf-transform/functions meshoptimizer sharp`. The `.blend` files, IKEA model downloads and Blender textures are not in the repository (too large).
