@@ -22,6 +22,7 @@ then open `http://localhost:8000/`. (Opening `index.html` straight from disk doe
 - **Doors and curtains**: click a door to swing it shut (you can't walk through a shut door) and again to open it; click a curtain to draw the sheers across the window or gather them to the side. Drawn sheers glow with the daylight behind them and the room's daylight drops; they move in a light breeze.
 - **Moods**: six ready-made combinations of floor, walls, fabric and wood — one click for this room, or tick "every room".
 - **Moodboard** (top left, or M): every room's choices side by side, the IKEA pieces in the room you are in with their article numbers, and a link that keeps everything — picks, time, lighting scene, furniture, doors and curtains, and where you stand. **Shopping list** prints (or saves as a PDF) every IKEA piece per room, counted from the furniture as it stands now.
+- **Versions** (on the moodboard): save the flat as it stands — materials, furniture, doors and curtains — under a name, switch between versions with a click (or V to flip through them), copy a link to any of them. They are kept in your browser.
 - **Measurements**: while a piece is selected, lines on the floor give the distance from each side to the nearest wall, built-in or other piece.
 - **Phones**: one panel at a time from the bar at the bottom.
 

@@ -13,8 +13,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=22';
-import { createOpenings } from './openings.js?v=22';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=23';
+import { createOpenings } from './openings.js?v=23';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -834,6 +834,29 @@ const eyeFov = (f) => (camera.aspect >= 1 ? f : Math.min(95, (2 * Math.atan(Math
 // ------------------------------------------------------------------ the shareable link: #v=…&t=…&s=…&p=…
 const SHORT = { floor: 'f', walls: 'w', fabric: 'c', wood: 'o' };
 let hashTimer = 0, hashReady = false;
+// the design as text: material picks (p), furniture (m), doors and curtains (o) — for the link and the versions
+function picksText(picks) {
+  const out = [];
+  for (const a of AREA_KEYS) {
+    const diff = CATS.filter((c) => picks[a][c] !== ORIGINAL[c]).map((c) => SHORT[c] + '.' + picks[a][c]);
+    if (diff.length) out.push(a + ':' + diff.join(','));
+  }
+  return out.join(';');
+}
+function parsePicks(text) {
+  const picks = defaultPicks(), LONG = Object.fromEntries(Object.entries(SHORT).map(([k, v]) => [v, k]));
+  for (const part of (text || '').split(';')) {
+    const [a, list] = part.split(':'); if (!AREAS[a] || !list) continue;
+    for (const kv of list.split(',')) { const [s, id] = kv.split('.'); const c = LONG[s]; if (c && SAMPLES[c].items.some((i) => i.id === id)) picks[a][c] = id; }
+  }
+  return picks;
+}
+const designNow = () => ({ p: picksText(state.picks), m: furnReady && FURN ? FURN.serialize() : pendingLayout, o: OPEN ? OPEN.serialize() : pendingOpen });
+function applyDesign(d) {
+  state.picks = parsePicks(d.p); applyPicks();
+  if (FURN) FURN.load(d.m || ''); if (OPEN) OPEN.load(d.o || '');
+  applyLight(); saveHash(); renderBoard();
+}
 function saveHash() {
   if (!hashReady) return;
   clearTimeout(hashTimer);
@@ -844,16 +867,7 @@ function saveHash() {
       h.set('e', [eye.pos.x, -eye.pos.z, d.x, -d.z, d.y].map((n) => n.toFixed(2)).join(','));
     } else h.set('v', 'overview');
     h.set('t', state.time.toFixed(2)); h.set('s', state.scene);
-    const p = [];
-    for (const a of AREA_KEYS) {
-      const diff = CATS.filter((c) => state.picks[a][c] !== ORIGINAL[c]).map((c) => SHORT[c] + '.' + state.picks[a][c]);
-      if (diff.length) p.push(a + ':' + diff.join(','));
-    }
-    if (p.length) h.set('p', p.join(';'));
-    const lay = furnReady && FURN ? FURN.serialize() : pendingLayout;
-    if (lay) h.set('m', lay);
-    const op = OPEN ? OPEN.serialize() : pendingOpen;
-    if (op) h.set('o', op);
+    for (const [k, v] of Object.entries(designNow())) if (v) h.set(k, v);
     history.replaceState(null, '', '#' + h.toString());
   }, 250);
 }
@@ -861,11 +875,7 @@ function readHash() {
   const h = new URLSearchParams(location.hash.slice(1)), out = {};
   if (h.get('t')) state.time = THREE.MathUtils.clamp(+h.get('t') || 2, 0, 3);
   if (h.get('s') && SCENES[h.get('s')]) { state.scene = h.get('s'); state.userPickedScene = true; }
-  const LONG = Object.fromEntries(Object.entries(SHORT).map(([k, v]) => [v, k]));
-  for (const part of (h.get('p') || '').split(';')) {
-    const [a, list] = part.split(':'); if (!AREAS[a] || !list) continue;
-    for (const kv of list.split(',')) { const [s, id] = kv.split('.'); const c = LONG[s]; if (c && SAMPLES[c].items.some((i) => i.id === id)) state.picks[a][c] = id; }
-  }
+  state.picks = parsePicks(h.get('p'));
   pendingLayout = h.get('m') || '';
   pendingOpen = h.get('o') || '';
   const e = (h.get('e') || '').split(',').map(Number);
@@ -972,6 +982,37 @@ function printList() {
   document.body.classList.add('is-printing');
   setTimeout(() => { window.print(); document.body.classList.remove('is-printing'); }, 50);
 }
+// versions of the design, to compare: kept in this browser; each one also has its own link
+const VKEY = 'flat13.versions';
+function versions() { try { return JSON.parse(localStorage.getItem(VKEY)) || []; } catch { return []; } }
+function storeVersions(list) { try { localStorage.setItem(VKEY, JSON.stringify(list)); } catch { toast('This browser does not keep versions (private window?)'); } }
+const sameDesign = (a, b) => ['p', 'm', 'o'].every((k) => (a[k] || '') === (b[k] || ''));
+function versionLink(d) {
+  const h = new URLSearchParams(location.hash.slice(1)); for (const k of ['p', 'm', 'o']) if (d[k]) h.set(k, d[k]); else h.delete(k);
+  return location.href.split('#')[0] + '#' + h.toString();
+}
+function renderVersions() {
+  const now = designNow(), list = [{ name: 'As designed', he: 'כמו בתכנון', p: '', m: '', o: '', fixed: true }, ...versions()];
+  return `<section class="board__vers"><div class="panel__title"><span dir="rtl">גרסאות</span> Versions</div><div class="vers">
+    ${list.map((v, i) => `<span class="ver${sameDesign(v, now) ? ' is-on' : ''}"><button type="button" data-ver="${i}">${v.he ? `<b dir="rtl">${v.he}</b> ` : ''}${v.name.replace(/</g, '&lt;')}</button>${v.fixed ? '' : `<button type="button" class="ver__link" data-verlink="${i}" title="Copy a link to this version">⧉</button><button type="button" class="ver__x" data-verdel="${i}" title="Delete">×</button>`}</span>`).join('')}
+    <form class="ver__new" id="verNew"><input id="verName" maxlength="40" placeholder="Name this version" aria-label="Name this version"><button type="submit">Save</button></form></div></section>`;
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-ver],[data-verlink],[data-verdel]'); if (!b) return;
+  const list = [{ p: '', m: '', o: '' }, ...versions()];
+  if (b.dataset.ver) applyDesign(list[+b.dataset.ver]);
+  else if (b.dataset.verdel) { const v = versions(); v.splice(+b.dataset.verdel - 1, 1); storeVersions(v); renderBoard(); }
+  else {
+    const url = versionLink(list[+b.dataset.verlink]);
+    try { await navigator.clipboard.writeText(url); toast('Link to this version copied'); } catch { toast(url); }
+  }
+});
+document.addEventListener('submit', (e) => {
+  if (e.target.id !== 'verNew') return;
+  e.preventDefault();
+  const v = versions(), name = $('#verName').value.trim() || `Version ${v.length + 1}`;
+  v.push({ name, ...designNow(), at: Date.now() }); storeVersions(v); renderBoard(); toast(`Saved “${name}”`);
+});
 function renderBoard() {
   const sw = (cat, id, a) => {
     const it = SAMPLES[cat].items.find((i) => i.id === id);
@@ -985,7 +1026,7 @@ function renderBoard() {
       <div class="board__sw">${CATS.map((c) => sw(c, state.picks[a][c], a)).join('')}</div></section>`;
   }).join('');
   const ik = (shoppingList().find((x) => x.a === state.area) || { rows: [] }).rows;
-  $('#boardBody').innerHTML = `<div class="board__rooms">${rows}</div>
+  $('#boardBody').innerHTML = `${renderVersions()}<div class="board__rooms">${rows}</div>
     <aside class="board__ikea"><div class="panel__title"><span dir="rtl">רהיטי איקאה</span> IKEA in ${AREAS[state.area].en}</div>
       ${ik.length ? `<ul>${ik.map((r) => `<li class="${r.qty ? '' : 'is-out'}"><b>${r.qty > 1 ? r.qty + ' × ' : ''}${r.n}</b> <span>${r.d}</span><code>${artNo(r.no)}</code></li>`).join('')}</ul>` : '<p class="panel__note">Built-ins only in these rooms.</p>'}
       <p class="panel__note">Counted from the furniture as it stands now. Article numbers as modelled; search them on IKEA Israel's site.</p></aside>`;
@@ -1066,6 +1107,11 @@ function buildUI() {
     if (FURN && FURN.onKey(e)) { e.preventDefault(); return; }
     if (e.key === '[' || e.key === ']') { state.time = Math.min(3, Math.max(0, state.time + (e.key === ']' ? 0.25 : -0.25))); autoScene(); applyLight(); }
     if (e.key === 'o' || e.key === 'O') setView('overview');
+    if ((e.key === 'v' || e.key === 'V') && versions().length) {   // flip through the versions, to compare
+      const list = [{ name: 'As designed', p: '', m: '', o: '' }, ...versions()], now = designNow();
+      const next = list[(list.findIndex((v) => sameDesign(v, now)) + 1) % list.length];
+      applyDesign(next); toast(next.name);
+    }
     if (e.key === 'm' || e.key === 'M') openBoard(!$('#board').classList.contains('is-on'));
     if (e.key === 'Escape') openBoard(false);
     const k = { ArrowUp: 'f', w: 'f', W: 'f', ArrowDown: 'b', s: 'b', S: 'b', ArrowLeft: 'l', ArrowRight: 'r', a: 'sl', A: 'sl', d: 'sr', D: 'sr' }[e.key];
