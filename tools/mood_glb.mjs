@@ -11,15 +11,16 @@ import { MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier } from 'meshoptimizer
 import sharp from 'sharp';
 const [src, dst] = process.argv.slice(2);
 await MeshoptEncoder.ready; await MeshoptDecoder.ready; await MeshoptSimplifier.ready;
-const ERR = Number(process.env.SIMPLIFY_ERR || 0.0006);
+const ERR = Number(process.env.SIMPLIFY_ERR || 0.0006), MODE = process.env.SIMPLIFY || 'lock';
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
 const doc = await io.read(src);
 await doc.transform(
   dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.TEXTURE] }),
   prune({ keepAttributes: true, keepExtras: true }),
   weld(),
-  // small detail goes first: the lightmap UVs are attribute seams, so islands keep their borders
-  simplify({ simplifier: MeshoptSimplifier, ratio: 0.0, error: ERR, lockBorder: false }),
+  // SIMPLIFY=off keeps every triangle; =lock simplifies but keeps the borders (UV and lightmap seams) in place,
+  // =free is the old behaviour, which let both sides of a seam move apart (cracks, flipped slivers)
+  ...(MODE === 'off' ? [] : [simplify({ simplifier: MeshoptSimplifier, ratio: 0.0, error: ERR, lockBorder: MODE !== 'free' })]),
   // surface detail maps at 512, colour at 1024
   textureCompress({ encoder: sharp, targetFormat: 'webp', slots: /^(normal|metallicRoughness|occlusion)/, resize: [512, 512], quality: 80 }),
   textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024], quality: 82 }),
