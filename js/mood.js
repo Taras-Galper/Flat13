@@ -13,8 +13,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=24';
-import { createOpenings } from './openings.js?v=24';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=25';
+import { createOpenings } from './openings.js?v=25';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -223,10 +223,22 @@ function lightSet(A, tag, name) {
   const dayS = new THREE.Vector3(...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].scale : 0)));
   const u = { [`l${tag}A`]: { value: arr.tex }, [`l${tag}DS`]: { value: dayS }, [`u${tag}LampW`]: { value: A.lampW } };
   const decl = `uniform sampler2DArray l${tag}A; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
-  const at = (i) => `lmDecode(texture(l${tag}A, vec3(q, ${i}.0)).rgb)`;
+  const at = (i) => `lmTap${tag}(${i}.0, q)`;
+  // ceilings: their light is smooth, but the WebP blocks in it showed as square patches; four taps a few texels apart
+  // (from the half-size level) blur the steps away. Edge-aware: a tap that differs a lot from the centre is another
+  // island (a narrow ceiling strip next to a dark one) and is left out.
+  const tap = `vec3 lmTap${tag}(float i, vec2 q) {
+          vec3 c = texture(l${tag}A, vec3(q, i)).rgb;
+          if (lmSoft < 0.5) return lmDecode(c);
+          vec2 d = 5.0 / vec2(textureSize(l${tag}A, 0).xy); vec3 s = c; float n = 1.0;
+          for (int k = 0; k < 4; k++) {
+            vec2 o = vec2(k < 2 ? 1.0 : -1.0, (k == 0 || k == 2) ? 1.0 : -1.0) * d;
+            vec3 t = textureLod(l${tag}A, vec3(q + o, i), 1.0).rgb; vec3 e = t - c;
+            float w = exp(-dot(e, e) * 300.0); s += t * w; n += w; }
+          return lmDecode(s / n); }`;
   const body = `vec3 E${tag} = dk * (uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)});
           ${Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
-  const fn = `vec3 lm${tag}(vec2 q, float dk) { ${body}\n          return E${tag}; }`;   // dk: the room's daylight (curtains)
+  const fn = `${tap}\n        vec3 lm${tag}(vec2 q, float dk) { ${body}\n          return E${tag}; }`;   // dk: the room's daylight (curtains)
   return { u, decl, fn, sum: `vec3 E${tag} = lm${tag}(q, dk);`, NL };
 }
 // reflections fitted to the room you are in: the probe's directions are traced to the room's walls (box projection),
@@ -265,7 +277,7 @@ function lightmapped(mat, atlas) {
   // the empty-room bake covers the shell and the rugs, and (when the bake has them, "builtins") what stays put in the rooms
   const empty = EA && (atlas === 'S' || mat.userData.rug || (mat.userData.still && EA.builtins)) ? lightSet(EA, 'E', 'E' + atlas) : null;
   const floorLM = !!mat.userData.floorLM && !!empty;
-  const sheer = /sheer/i.test(mat.name);
+  const sheer = /sheer/i.test(mat.name), ceil = /^Ceiling/.test(mat.name);
   mat.lightMap = BLACK; mat.lightMapIntensity = 0;            // turns on the uv1 lightmap path; the sum below replaces it
   mat.userData.atlas = atlas;
   mat.userData.uPiece = mat.userData.uPiece || { value: 1 };       // a moved piece of furniture takes the light of where it now stands
@@ -330,6 +342,7 @@ function lightmapped(mat, atlas) {
           return r;
         }` : ''}
         vec3 lmDecode(vec3 t) { return pow(t, vec3(2.2)); }
+        float lmSoft = 0.0;   // 1 on the underside of a ceiling (set in main)
         ${full.fn}
         ${empty ? empty.fn + '\n        ' + MOV_GLSL : ''}
         ${sheer ? 'uniform float uSheer;' : ''}
@@ -344,7 +357,7 @@ function lightmapped(mat, atlas) {
           for (int k = 0; k < ${NA}; k++) if (k == a) c = uWallCol[k];
           diffuseColor.rgb *= c; }` : ''}`)
       .replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
-        { vec2 q = vLightMapUv;
+        { vec2 q = vLightMapUv;${ceil ? ' lmSoft = normalize(vWN).y < -0.7 ? 1.0 : 0.0;' : ''}
           float dk = 1.0; { int ri = rectOf(); if (ri >= 0) dk = uRectK[ri / 4][ri % 4]; }
           // all interior light is baked: drop the live lights (they only light the world outside)
           irradiance = vec3(0.0); reflectedLight.directDiffuse = vec3(0.0); reflectedLight.directSpecular = vec3(0.0);
@@ -426,7 +439,7 @@ function lightmapped(mat, atlas) {
         #endif`);
     sh.fragmentShader = fs;
   };
-  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '') + (floorLM ? 'F' : '') + (sheer ? 'S' : '');
+  mat.customProgramCacheKey = () => 'lm' + atlas + full.NL + (empty ? 'E' + empty.NL : '') + (wall ? 'W' : '') + (planar ? 'P' : '') + (floorLM ? 'F' : '') + (sheer ? 'S' : '') + (ceil ? 'C' : '');
   mat.needsUpdate = true;
 }
 

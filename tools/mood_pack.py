@@ -6,7 +6,8 @@ Run from the project folder:  python3 tools/mood_pack.py"""
 import json, os, sys
 import numpy as np
 from PIL import Image
-from scipy.ndimage import gaussian_filter, median_filter, distance_transform_edt
+from scipy.ndimage import gaussian_filter, median_filter, distance_transform_edt, label
+import struct
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOOD = os.path.join(ROOT, "mood"); NPY = os.path.join(MOOD, "lm2")          # bakes in, from blender/mood_bake2.py
@@ -47,15 +48,76 @@ def gauss(v, m, sigma=3.0):
     for c in range(3): out[..., c] = gaussian_filter(v[..., c] * m, sigma, mode="constant") / np.maximum(w, 1e-6)
     return out
 
-def denoise(v, m, near):
+def denoise(v, m, near, lab=None):
+    raw = v.copy() if lab is not None else None
     v = oidn_lightmap(v) if oidn is not None else gauss(v, m)
+    if lab is not None: v = smooth_ceilings(raw, v, lab)
     v = np.where(m[..., None] > 0, v, 0)
     return v[near[0], near[1]] * (DIST[..., None] <= DILATE)   # dilate: empty texels take their nearest island texel
 
+# Ceilings: lit only by bounced light, so 128 samples leave them very noisy, and the denoiser turned that into soft
+# blotches half a metre across ("patches"). Their light is smooth, so their texels get a wide blur of the raw bake
+# instead, each flat piece on its own (the corner shading at the walls stays). The ceiling texels are found in the
+# exported model: faces looking down, above 2 m, in the lightmap UVs.
+CEIL_SIGMA = float(os.environ.get("MOOD_CEIL_SIGMA", "7"))      # texels (about 2.4 cm each in the shell atlas)
+RAW_GLB = {"S": "shell_raw.glb", "ES": "shell_raw.glb"}
+def glb_tris(path):
+    b = open(path, "rb").read(); n = struct.unpack_from("<I", b, 12)[0]
+    g = json.loads(b[20:20 + n]); off = 20 + n + 8
+    T = {5126: np.float32, 5123: np.uint16, 5125: np.uint32, 5121: np.uint8}; C = {"SCALAR": 1, "VEC2": 2, "VEC3": 3}
+    def acc(i):
+        a = g["accessors"][i]; bv = g["bufferViews"][a["bufferView"]]; dt = np.dtype(T[a["componentType"]]); k = C[a["type"]]
+        st = bv.get("byteStride") or dt.itemsize * k; o = off + bv.get("byteOffset", 0) + a.get("byteOffset", 0)
+        raw = np.frombuffer(b, np.uint8, count=st * (a["count"] - 1) + dt.itemsize * k, offset=o)
+        return np.lib.stride_tricks.as_strided(raw, (a["count"], dt.itemsize * k), (st, 1)).copy().view(dt).reshape(-1, k).astype(np.float64)
+    def mat(nd):
+        M = np.eye(4)
+        if "matrix" in nd: return np.array(nd["matrix"]).reshape(4, 4).T
+        x, y, z, w = nd.get("rotation", [0, 0, 0, 1])
+        R = np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)], [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)], [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+        M[:3, :3] = R * np.array(nd.get("scale", [1, 1, 1])); M[:3, 3] = nd.get("translation", [0, 0, 0]); return M
+    out = []
+    def walk(i, P):
+        nd = g["nodes"][i]; W = P @ mat(nd)
+        for p in (g["meshes"][nd["mesh"]]["primitives"] if "mesh" in nd else []):
+            if "TEXCOORD_1" not in p["attributes"]: continue
+            pos = acc(p["attributes"]["POSITION"]); pos = pos @ W[:3, :3].T + W[:3, 3]; uv = acc(p["attributes"]["TEXCOORD_1"])
+            idx = acc(p["indices"]).astype(np.int64).reshape(-1, 3) if "indices" in p else np.arange(len(pos)).reshape(-1, 3)
+            out.append((pos[idx], uv[idx]))
+        for c in nd.get("children", []): walk(c, W)
+    for r in g["scenes"][g.get("scene", 0)]["nodes"]: walk(r, np.eye(4))
+    return out
+def ceiling_parts(atlas, size, island):
+    """Labelled ceiling pieces in the atlas (Blender orientation, rows bottom-up), or None."""
+    path = os.path.join(MOOD, "v2", RAW_GLB.get(atlas, ""))
+    if atlas not in RAW_GLB or not os.path.exists(path): return None
+    from PIL import ImageDraw
+    img = Image.new("L", (size, size), 0); d = ImageDraw.Draw(img)
+    for pos, uv in glb_tris(path):
+        n = np.cross(pos[:, 1] - pos[:, 0], pos[:, 2] - pos[:, 0]); ln = np.linalg.norm(n, axis=1) + 1e-12
+        down = (n[:, 1] / ln < -0.95) & (pos[:, :, 1].min(axis=1) > 2.0)        # glTF is y-up
+        for t in uv[down]: d.polygon([(u * size, v * size) for u, v in t], fill=255)
+    m = (np.asarray(img)[::-1] > 0) & (island > 0)   # glTF v runs top-down, Blender rows bottom-up; only baked texels
+    lab, k = label(m); print(atlas, "ceiling texels", int(m.sum()), "pieces", k)
+    return lab if k else None
+def smooth_ceilings(raw, v, lab):
+    """Ceiling texels: a normalised Gaussian of the raw bake within each piece; everything else as denoised."""
+    out = v.copy()
+    for i in range(1, lab.max() + 1):
+        ys, xs = np.nonzero(lab == i); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        pad = int(3 * CEIL_SIGMA) + 1; Y0, X0 = max(0, y0 - pad), max(0, x0 - pad); Y1, X1 = min(lab.shape[0], y1 + pad), min(lab.shape[1], x1 + pad)
+        k = (lab[Y0:Y1, X0:X1] == i).astype(np.float32); w = gaussian_filter(k, CEIL_SIGMA, mode="constant")
+        r = raw[Y0:Y1, X0:X1]
+        for c in range(r.shape[2]):
+            s_ = gaussian_filter(r[..., c] * k, CEIL_SIGMA, mode="constant") / np.maximum(w, 1e-6)
+            out[Y0:Y1, X0:X1, c] = np.where(k > 0, s_, out[Y0:Y1, X0:X1, c])
+    return out
+
 def enc(v, s): return (np.clip(v / s, 0, 1) ** (1 / 2.2) * 255 + 0.5).astype(np.uint8)
+WEBP = {"lossless": True, "quality": 100, "method": 5} if os.environ.get("MOOD_WEBP_Q") == "lossless" else {"quality": int(os.environ.get("MOOD_WEBP_Q", "88")), "method": 5}
 def save(arr8, name):
     # PNG rows run top-down, Blender pixels bottom-up; glTF UVs (flipY=false) expect the PNG orientation
-    Image.fromarray(arr8[::-1]).save(os.path.join(LM, name), "WEBP", quality=88, method=5)
+    Image.fromarray(arr8[::-1]).save(os.path.join(LM, name), "WEBP", **WEBP)
     return "lm/" + name
 
 os.makedirs(LM, exist_ok=True)
@@ -78,17 +140,18 @@ for atlas in (only or atlases):
     m = m.astype(np.float32)
     DIST, near = distance_transform_edt(m == 0, return_indices=True)
     print(atlas, m.shape[0], "island texels", round(float(m.mean()), 3))
+    lab = ceiling_parts(atlas, m.shape[0], m)
     for g in DAY:
         p = os.path.join(NPY, f"{atlas}_{g}.npy")
         if not os.path.exists(p): continue
-        v = denoise(np.load(p).astype(np.float32), m, near); nz = v[v > 1e-6]
+        v = denoise(np.load(p).astype(np.float32), m, near, lab); nz = v[v > 1e-6]
         s = float(np.percentile(nz, 99.5)) if nz.size else 1.0
         ent["maps"][g] = {"file": save(enc(v, s), f"{atlas}_{g}.webp"), "scale": s}
     lamps = [g for g in LAMPS if os.path.exists(os.path.join(NPY, f"{atlas}_{g}.npy"))]
     for k in range(0, len(lamps), 3):
         trio = lamps[k:k + 3]; out = None
         for ch, g in enumerate(trio):
-            v = denoise(np.load(os.path.join(NPY, f"{atlas}_{g}.npy")).astype(np.float32), m, near)
+            v = denoise(np.load(os.path.join(NPY, f"{atlas}_{g}.npy")).astype(np.float32), m, near, lab)
             L = v @ np.array([0.2126, 0.7152, 0.0722], np.float32); nz = L[L > 1e-6]
             s = float(np.percentile(nz, 99.7)) if nz.size else 1.0
             if out is None: out = np.zeros(L.shape + (3,), np.uint8)
