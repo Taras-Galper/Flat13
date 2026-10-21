@@ -1,6 +1,7 @@
 // Rearranging the furniture, like a moodboard that builds the room: drag a piece in from the catalog, pick
 // up any loose piece and move it (10 cm grid, it snaps to the walls and never goes through the walls,
-// the built-ins or other furniture), scroll or press Turn to rotate it, Remove it, undo.
+// the built-ins or other furniture), scroll or press Turn to rotate it, Remove it, undo. While a piece is selected,
+// lines on the floor give the distance from each side to the nearest wall, built-in or piece.
 // The light stays right: where a piece stood takes the "empty room" bake, its baked floor shadow goes with it,
 // and a moved piece takes the brightness of the floor where it now stands.
 import * as THREE from 'three';
@@ -157,6 +158,57 @@ export function createFurniture(ctx) {
         if (m.userData.ownMat) m.material.userData.uPiece.value = gain;
       });
     }
+  }
+
+  // ---------------------------------------------------------------- measurements: from each side of the piece to the nearest wall, built-in or piece
+  const MEAS_MAX = 2.5;
+  const measLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: accent, depthTest: false, transparent: true, toneMapped: false }));
+  measLines.renderOrder = 12; measLines.raycast = () => {}; measLines.visible = false; scene.add(measLines);
+  const measBox = document.createElement('div'); measBox.className = 'meas'; document.body.appendChild(measBox);
+  const measLabels = [0, 1, 2, 3].map(() => { const e = document.createElement('span'); measBox.appendChild(e); return e; });
+  let measKey = '', meas = [];
+  function raySeg(px, py, dx, dy, [ax, ay], [bx, by]) {   // distance along the ray to the segment, or Infinity
+    const ex = bx - ax, ey = by - ay, den = dx * ey - dy * ex; if (Math.abs(den) < 1e-9) return Infinity;
+    const t = ((ax - px) * ey - (ay - py) * ex) / den, u = ((ax - px) * dy - (ay - py) * dx) / den;
+    return t >= 0 && u >= 0 && u <= 1 ? t : Infinity;
+  }
+  function measure(p) {
+    const q = quadOf(p), rects = ctx.ROOMS[p.room] || [], out = [];
+    const inRoom = (x, y) => rects.some((r) => inRect(r, x, y, 0));
+    const others = [...Object.values(P).filter((o) => o !== p && !o.removed && !o.def.rug).map((o) => quadOf(o)), ...obstacles.map((o) => o.q)];
+    for (let i = 0; i < 4; i++) {
+      const [ax, ay] = q[i], [bx, by] = q[(i + 1) % 4], mx = (ax + bx) / 2, my = (ay + by) / 2;
+      const len = Math.hypot(bx - ax, by - ay), nx = (by - ay) / len, ny = -(bx - ax) / len;   // outward (the corners go anticlockwise)
+      let d = Infinity;
+      for (let t = 0; t <= MEAS_MAX; t += 0.01) if (!inRoom(mx + nx * t, my + ny * t)) { d = t; break; }   // the wall (or a doorway)
+      for (const o of others) for (let k = 0; k < 4; k++) d = Math.min(d, raySeg(mx, my, nx, ny, o[k], o[(k + 1) % 4]));
+      if (d > 0.005 && d <= MEAS_MAX) out.push({ mx, my, ex: mx + nx * d, ey: my + ny * d, d });
+    }
+    return out;
+  }
+  // every frame while a piece is selected: the lines when it moved, the labels where the camera sees them
+  function update() {
+    const p = editing && selected && !selected.removed ? selected : null;
+    measLines.visible = !!p; measBox.style.display = p ? '' : 'none';
+    if (!p) { measKey = ''; return; }
+    const key = `${p.id},${p.x.toFixed(3)},${p.y.toFixed(3)},${p.rot}`;
+    if (key !== measKey) {
+      measKey = key; meas = measure(p);
+      const pts = [];
+      for (const m of meas) {
+        const tx = -(m.ey - m.my) / m.d * 0.05, ty = (m.ex - m.mx) / m.d * 0.05;   // a small tick across each end
+        pts.push(V(m.mx, 0.03, -m.my), V(m.ex, 0.03, -m.ey), V(m.ex - tx, 0.03, -(m.ey - ty)), V(m.ex + tx, 0.03, -(m.ey + ty)));
+      }
+      measLines.geometry.dispose(); measLines.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    }
+    const r = canvas.getBoundingClientRect(), v = new THREE.Vector3();
+    measLabels.forEach((e, i) => {
+      const m = meas[i]; if (!m) { e.style.display = 'none'; return; }
+      v.set((m.mx + m.ex) / 2, 0.03, -(m.my + m.ey) / 2).project(camera);
+      if (v.z > 1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05) { e.style.display = 'none'; return; }
+      e.style.display = ''; e.textContent = m.d < 1 ? `${Math.round(m.d * 100)} cm` : `${m.d.toFixed(2)} m`;
+      e.style.transform = `translate(${r.left + (v.x + 1) / 2 * r.width}px, ${r.top + (1 - v.y) / 2 * r.height}px) translate(-50%, -50%)`;
+    });
   }
 
   // ---------------------------------------------------------------- selection panel
@@ -372,7 +424,7 @@ export function createFurniture(ctx) {
   function reset() { snapshot(); load(''); ctx.onChange(); }
 
   return {
-    addMeshes, onPointerDown, onPointerMove, onPointerUp, onWheel, onKey, catalog, thumbnail, startCardDrag, addInView,
+    addMeshes, onPointerDown, onPointerMove, onPointerUp, onWheel, onKey, catalog, thumbnail, startCardDrag, addInView, update,
     serialize, load, undo, reset, refreshGains, select,
     get editing() { return editing; }, set editing(v) { editing = v; if (!v) { select(null); canvas.style.cursor = ''; } },
     get dragging() { return !!drag || !!cardDrag; }, get count() { return Object.keys(P).length; },

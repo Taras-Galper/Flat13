@@ -14,8 +14,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=18';
-import { createOpenings } from './openings.js?v=18';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=19';
+import { createOpenings } from './openings.js?v=19';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -993,6 +993,35 @@ function setBusy(on, p = 0) {
 }
 
 // ------------------------------------------------------------------ the moodboard sheet
+// the shopping list: the IKEA pieces of each area, counted from the furniture as it stands now (moved, added, removed)
+function shoppingList() {
+  const pieces = FURN ? Object.values(FURN.pieces) : [];
+  const counted = new Set(pieces.filter((p) => p.art).map((p) => p.art));
+  return AREA_KEYS.map((a) => {
+    const rows = (IKEA[a] || []).map(([n, d, no]) => ({ n, d, no, qty: counted.has(no) ? 0 : 1, was: 0 }));
+    for (const p of pieces) {
+      if (!p.art) continue;
+      const here = ROOM_AREA[p.room] === a && !p.removed, before = !p.added && ROOM_AREA[p.room0] === a;
+      let r = rows.find((x) => x.no === p.art);
+      if (!r && here) rows.push(r = { n: p.name.split(' ')[0], d: p.name.split(' ').slice(1).join(' '), no: p.art, qty: 0, was: 0 });
+      if (r && here) r.qty++;
+      if (r && before) r.was++;
+    }
+    return { a, rows: rows.filter((r) => r.qty || r.was) };
+  });
+}
+function printList() {
+  const L = shoppingList(), all = L.flatMap((x) => x.rows.filter((r) => r.qty));
+  const n = all.reduce((k, r) => k + r.qty, 0), kinds = new Set(all.map((r) => r.no)).size;
+  $('#shop').innerHTML = `<header><h1 dir="rtl">רשימת קניות · דירה בקומה 13</h1><p>IKEA shopping list · ${n} pieces, ${kinds} articles · ${new Date().toLocaleDateString('en-GB')}</p></header>
+    ${L.filter((x) => x.rows.length).map((x) => `<section><h2><span dir="rtl">${AREAS[x.a].he}</span> ${AREAS[x.a].en}</h2><table>
+      <thead><tr><th>Qty</th><th>Product</th><th>Article no.</th></tr></thead><tbody>
+      ${x.rows.map((r) => `<tr class="${r.qty ? '' : 'is-out'}"><td>${r.qty}${r.was && r.was !== r.qty ? ` <small>(was ${r.was})</small>` : ''}</td><td><b>${r.n}</b> ${r.d}</td><td><code>${artNo(r.no)}</code></td></tr>`).join('')}
+      </tbody></table></section>`).join('')}
+    <footer>Article numbers as modelled in the flat; search them on IKEA Israel's site for current prices and stock. Link to this layout: ${location.href.replace(/&/g, '&amp;')}</footer>`;
+  document.body.classList.add('is-printing');
+  setTimeout(() => { window.print(); document.body.classList.remove('is-printing'); }, 50);
+}
 function renderBoard() {
   const sw = (cat, id, a) => {
     const it = SAMPLES[cat].items.find((i) => i.id === id);
@@ -1005,12 +1034,13 @@ function renderBoard() {
       <header><b dir="rtl">${d.he}</b><span>${d.en}${m ? ' · ' + m.en : ''}</span></header>
       <div class="board__sw">${CATS.map((c) => sw(c, state.picks[a][c], a)).join('')}</div></section>`;
   }).join('');
-  const ik = IKEA[state.area] || [];
+  const ik = (shoppingList().find((x) => x.a === state.area) || { rows: [] }).rows;
   $('#boardBody').innerHTML = `<div class="board__rooms">${rows}</div>
     <aside class="board__ikea"><div class="panel__title"><span dir="rtl">רהיטי איקאה</span> IKEA in ${AREAS[state.area].en}</div>
-      ${ik.length ? `<ul>${ik.map(([n, d, no]) => `<li><b>${n}</b> <span>${d}</span><code>${artNo(no)}</code></li>`).join('')}</ul>` : '<p class="panel__note">Built-ins only in these rooms.</p>'}
-      <p class="panel__note">Article numbers as modelled; search them on ikea.com.</p></aside>`;
+      ${ik.length ? `<ul>${ik.map((r) => `<li class="${r.qty ? '' : 'is-out'}"><b>${r.qty > 1 ? r.qty + ' × ' : ''}${r.n}</b> <span>${r.d}</span><code>${artNo(r.no)}</code></li>`).join('')}</ul>` : '<p class="panel__note">Built-ins only in these rooms.</p>'}
+      <p class="panel__note">Counted from the furniture as it stands now. Article numbers as modelled; search them on IKEA Israel's site.</p></aside>`;
 }
+document.addEventListener('click', (e) => { if (e.target.closest('#printList')) printList(); });
 function openBoard(on) { $('#board').classList.toggle('is-on', on); if (on) renderBoard(); }
 
 // ------------------------------------------------------------------ UI
@@ -1275,6 +1305,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   U.time.value = now / 1000;
+  if (FURN) FURN.update();             // the measurements follow the camera
   if (OPEN && OPEN.step(now) === false && openWasBusy) envDirty = now + 200;   // doors and curtains in motion
   openWasBusy = !!(OPEN && OPEN.busy);
   if (tween) {
