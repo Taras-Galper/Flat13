@@ -29,7 +29,12 @@ SKIP_COLS = {"World", "Cameras", "Lights", "MOOD", "Cutters"}
 BUILTIN = ("Base run", "Worktop", "Splash", "Tall column", "Peninsula", "Waterfall", "Toe kick", "Floating shelf", "Niche",
            "Shoe cabinet", "Clay media", "Curtain pocket", "Screen", "Seam")
 SIZE = {"S": 2048, "L": 1536, "R": 1536}
-TRI_CAP = 9000
+# triangle budgets per object, by size. The first version cut everything to 1200 / 4000 / 9000 triangles (down to 4 %),
+# with Blender's collapse decimation: cushions cracked open at their seams, small triangles flipped (dark specks), the
+# vase broke into shards. Now flat areas are dissolved first (lossless), collapse comes after only above a far higher
+# budget, never below 30 % of the original, and the model's own normals are copied back afterwards.
+CAPS = ((0.35, 6000), (1.0, 16000), (99.0, 36000))
+MIN_RATIO = 0.30
 
 def inside(rects, x, y): return any(x0 <= x <= x1 and y0 <= y <= y1 for x0, x1, y0, y1 in rects)
 def bbox(o):
@@ -61,10 +66,11 @@ def pick():
     return out
 
 def clean(me, planar=False):
-    """Weld split vertices so neighbouring faces share one lightmap island; merge coplanar faces."""
+    """Shell and built-ins: weld split vertices (one lightmap island per surface) and merge coplanar faces.
+    Furniture is not welded: that joined the separate shells of cushions and lost the model's hard and soft edges."""
     bm = bmesh.new(); bm.from_mesh(me)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.0006)
     if planar:
+        bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.0006)
         bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(1.0), use_dissolve_boundaries=False, verts=bm.verts[:], edges=bm.edges[:], delimit={"MATERIAL"})
     bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges[:])
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
@@ -72,7 +78,7 @@ def clean(me, planar=False):
 
 def pack_tiles(objs, px, pad=3):
     """Per-object square tiles (sized by surface area), shelf-packed into the atlas."""
-    areas = [max(1e-4, sum(p.area for p in o.data.polygons)) for o in objs]
+    areas = [max(1e-4, sum(p.area for p in o.data.polygons)) * (1.8 if o.get("furn") else 1.0) for o in objs]
     order = sorted(range(len(objs)), key=lambda i: -areas[i])
     def fits(k):
         side = [max(10 / px, k * math.sqrt(a)) for a in areas]
@@ -97,6 +103,11 @@ def pack_tiles(objs, px, pad=3):
             d.uv = (x0 + m + u * (s_ - 2 * m), y0 + m + v * (s_ - 2 * m))
     log("packed", len(objs), "texels/m", round(lo * px, 1))
 
+def apply_mods(ob):
+    bpy.context.view_layer.update()
+    me2 = bpy.data.meshes.new_from_object(ob.evaluated_get(bpy.context.evaluated_depsgraph_get()), preserve_all_data_layers=True, depsgraph=bpy.context.evaluated_depsgraph_get())
+    old = ob.data; ob.modifiers.clear(); ob.data = me2; bpy.data.meshes.remove(old)
+
 STATE = {}
 def step_copy():
     dg = bpy.context.evaluated_depsgraph_get()
@@ -113,15 +124,27 @@ def step_copy():
         n = sum(len(p.vertices) - 2 for p in me.polygons); tb += n
         no = bpy.data.objects.new(o.name, me); col.objects.link(no)
         no["atlas"] = atlas; no["src"] = o.name; no["room"] = room
+        if atlas != "S" and not o.name.startswith(BUILTIN): no["furn"] = 1   # furniture: a larger share of the lightmap
         for k in ("circuit", "emit_full", "full"):
             if k in o.keys(): no[k] = o[k]
         mn_, mx_ = bbox(no); diag = (mx_ - mn_).length
-        cap = 1200 if diag < 0.35 else 4000 if diag < 1.0 else TRI_CAP
+        cap = next(c for lim, c in CAPS if diag < lim)
         if n > cap and not o.name.startswith(("Wall", "Floor", "Ceiling")):
-            d = no.modifiers.new("Simplify", "DECIMATE"); d.ratio = max(0.04, cap / n); d.use_collapse_triangulate = True
-            bpy.context.view_layer.update()
-            me2 = bpy.data.meshes.new_from_object(no.evaluated_get(bpy.context.evaluated_depsgraph_get()))
-            old = no.data; no.modifiers.clear(); no.data = me2; bpy.data.meshes.remove(old)
+            ref = no.copy(); ref.data = me.copy(); col.objects.link(ref)      # the full mesh, to copy the normals back from
+            # 1. flat areas: dissolve, lossless (keeps UV seams, sharp edges and materials apart)
+            d = no.modifiers.new("Flat", "DECIMATE"); d.decimate_type = "DISSOLVE"; d.angle_limit = math.radians(0.5)
+            d.delimit = {"UV", "SHARP", "MATERIAL", "SEAM"}
+            apply_mods(no)
+            m2 = sum(len(p.vertices) - 2 for p in no.data.polygons)
+            # 2. only if still over budget: collapse, but never below 30 % of the original
+            if m2 > cap:
+                d = no.modifiers.new("Simplify", "DECIMATE"); d.ratio = min(1.0, max(MIN_RATIO * n / m2, cap / m2)); d.use_collapse_triangulate = True
+                apply_mods(no)
+            # 3. the model's own normals back (soft cushions, crisp edges, reflections that follow the surface)
+            t = no.modifiers.new("Normals", "DATA_TRANSFER"); t.object = ref; t.use_loop_data = True
+            t.data_types_loops = {"CUSTOM_NORMAL"}; t.loop_mapping = "POLYINTERP_NEAREST"
+            apply_mods(no)
+            ref_me = ref.data; bpy.data.objects.remove(ref, do_unlink=True); bpy.data.meshes.remove(ref_me)
         ta += sum(len(p.vertices) - 2 for p in no.data.polygons)
         for i, m in enumerate(no.data.materials):
             if m is None: continue
