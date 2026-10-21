@@ -7,15 +7,14 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=21';
-import { createOpenings } from './openings.js?v=21';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=22';
+import { createOpenings } from './openings.js?v=22';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -169,89 +168,44 @@ const VER = new URL(import.meta.url).searchParams.get('v') || 'dev';
 const vurl = (u) => (/^(data|blob):/.test(u) ? u : u + (u.includes('?') ? '&' : '?') + 'v=' + VER);
 const manager = new THREE.LoadingManager(); manager.setURLModifier(vurl);
 const texLoader = new THREE.TextureLoader(manager);
-// The light maps of one atlas (3 times of day + the lamp maps) go into ONE texture array: most graphics cards
-// (and Chrome on Windows) allow only 16 textures per shader, and the shell with its "empty room" light needed 14
-// separate maps on top of the material's own textures, so its shader failed and the floor was not drawn at all.
-// The maps come GPU-compressed (KTX2, made by tools/lm_ktx2.mjs) and stay compressed on the graphics card, about
-// 4–8× less memory than WebP, which the browser unpacks to full 32-bit colour. Then each lamp group is its own grey
-// layer (slot = lamp file × 3 + channel); with WebP (?webp) the lamp maps hold three groups each.
+// The light maps of one atlas (3 times of day + the lamp maps, three groups to a map) go into ONE texture array: most
+// graphics cards (and Chrome on Windows) allow only 16 textures per shader, and the shell with its "empty room" light
+// needed 14 separate maps on top of the material's own textures, so its shader failed and the floor was not drawn.
 // The "empty room" light (atlases E…) is only fetched once someone rearranges furniture.
-const USE_KTX = () => !!MANIFEST.black && Q.has('ktx');   // on trial (?ktx): ETC1S shows coloured blocks in dim light
-const lmBitmaps = {}, lumCache = {};
-function lmBitmap(file) {
-  return (lmBitmaps[file] = lmBitmaps[file] || fetch(vurl(BASE + file)).then((r) => r.blob())
-    .then((b) => createImageBitmap(b, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' })));
-}
-let ktxLoader = null;
-const ktx = (file) => {
-  if (!ktxLoader) ktxLoader = new KTX2Loader(manager).setTranscoderPath('vendor/three/addons/libs/basis/').setWorkerLimit(2).detectSupport(renderer);
-  return ktxLoader.loadAsync(BASE + file);
-};
-const ARRAY_OK = new Set([THREE.RGBAFormat, THREE.RGBA_BPTC_Format, THREE.RGB_ETC2_Format, THREE.RGBA_ETC2_EAC_Format, THREE.RGBA_ASTC_4x4_Format, THREE.RGB_S3TC_DXT1_Format, THREE.RGBA_S3TC_DXT1_Format, THREE.RGBA_S3TC_DXT5_Format]);
-// a small CPU copy of an atlas's WebP maps, to read the light on the floor under a moved piece
-function loadLum(A) {
-  if (A.arr && !A.arr.grey) return A.arr.load();     // the WebP path makes these copies itself, from the same images
-  const files = [...MANIFEST.day.map((g) => A.maps[g]?.file), ...lampFiles(A)].filter((f) => f && !lumCache[f]);
-  return Promise.all(files.map((f) => lmBitmap(f).then((bm) => {
-    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
-    g.drawImage(bm, 0, 0, 256, 256); lumCache[f] = g.getImageData(0, 0, 256, 256).data; bm.close && bm.close(); delete lmBitmaps[f];
-  })));
-}
+// (GPU-compressed KTX2 maps were tried: ETC1S showed coloured blocks in dim rooms, UASTC was ~9× the download.)
+const lumCache = {};   // a small CPU copy of each map, to read the light on the floor (moved pieces, shut doors)
+const loadImage = (file) => fetch(vurl(BASE + file)).then((r) => r.blob())
+  .then((b) => createImageBitmap(b, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }));
+const loadLum = (A) => (A.arr ? A.arr.load() : Promise.resolve());
 function lmArray(A, name) {
   if (A.arr) return A.arr;
-  const useK = USE_KTX() && A.ktx;
-  const files = useK ? A.ktx : [...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].file : null)), ...lampFiles(A)];
+  const files = [...MANIFEST.day.map((g) => (A.maps[g] ? A.maps[g].file : null)), ...lampFiles(A)];
   const tex = new THREE.DataArrayTexture(null, 1, 1, files.length);       // a stand-in: the GL texture behind it is made here
   const gl = renderer.getContext(), glTex = gl.createTexture();
   const p = renderer.properties.get(tex); p.__webglTexture = glTex; p.__webglInit = true;
-  const params = () => {
+  const upload = (bms) => {
+    const size = bms.find(Boolean)?.width || 1, levels = Math.floor(Math.log2(size)) + 1;
+    renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, size, size, files.length);   // starts black: missing maps stay black
+    bms.forEach((bm, i) => { if (bm && bm.width === size) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, size, size, 1, gl.RGBA, gl.UNSIGNED_BYTE, bm); });
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const an = gl.getExtension('EXT_texture_filter_anisotropic'); if (an) gl.texParameterf(gl.TEXTURE_2D_ARRAY, an.TEXTURE_MAX_ANISOTROPY_EXT, 4);
-  };
-  const pixelStore = () => {
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-  };
-  const fromKTX = () => {
-    const blackFile = (w) => MANIFEST.black[w];
-    return Promise.all(files.map((f) => (f ? ktx(f).catch((e) => { console.warn('light map', f, e); return null; }) : null))).then(async (ts) => {
-      const t0 = ts.find(Boolean); if (!t0) throw new Error('no light maps');
-      const w = t0.mipmaps[0].width, fmt = t0.format;
-      if (!ARRAY_OK.has(fmt)) throw new Error('compressed format not usable for arrays: ' + fmt);
-      const black = await ktx(blackFile(w));
-      const comp = fmt !== THREE.RGBAFormat;
-      const levels = t0.mipmaps.filter((m) => !comp || Math.min(m.width, m.height) >= 4).length;   // compressed: stop at 4×4, one block
-      renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex); pixelStore();
-      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, comp ? fmt : gl.RGBA8, w, w, files.length);
-      ts.forEach((t, i) => {
-        const src = t && t.format === fmt && t.mipmaps[0].width === w ? t : black;
-        src.mipmaps.slice(0, levels).forEach((m, l) => {
-          if (comp) gl.compressedTexSubImage3D(gl.TEXTURE_2D_ARRAY, l, 0, 0, i, m.width, m.height, 1, fmt, m.data);
-          else gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, 0, 0, i, m.width, m.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, m.data);
-        });
-      });
-      params(); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAX_LEVEL, levels - 1); A.gpuBytes = ts.length * t0.mipmaps.reduce((n, m) => n + m.data.byteLength, 0);
-      if (Q.has('lmdebug')) console.warn('LMDEBUG', name, fmt, w, t0.mipmaps.length, files.length, gl.getError(), black.mipmaps.length, black.format);
-      ts.forEach((t) => t && t.dispose()); black.dispose();
+    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    bms.forEach((bm, i) => {
+      if (!bm) return;
+      const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(bm, 0, 0, 256, 256); lumCache[files[i]] = g.getImageData(0, 0, 256, 256).data; bm.close();
     });
   };
-  const fromWebP = () => Promise.all(files.map((f) => (f ? lmBitmap(f) : null))).then((bms) => {
-    const size = bms.find(Boolean)?.width || 1, levels = Math.floor(Math.log2(size)) + 1;
-    renderer.state.bindTexture(gl.TEXTURE_2D_ARRAY, glTex); pixelStore();
-    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, size, size, files.length);   // starts black: missing maps stay black
-    bms.forEach((bm, i) => { if (bm && bm.width === size) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, size, size, 1, gl.RGBA, gl.UNSIGNED_BYTE, bm); });
-    params(); gl.generateMipmap(gl.TEXTURE_2D_ARRAY); A.gpuBytes = files.length * size * size * 4 * 4 / 3;
-    bms.forEach((bm, i) => { const f = files[i]; if (bm && f && !lumCache[f]) {
-      const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d', { willReadFrequently: true });
-      g.drawImage(bm, 0, 0, 256, 256); lumCache[f] = g.getImageData(0, 0, 256, 256).data; } });
-    bms.forEach((bm) => bm && bm.close && bm.close()); files.forEach((f) => f && delete lmBitmaps[f]);
-  });
   let loading = null;
-  const load = () => (loading = loading || (useK ? fromKTX() : fromWebP()).then(() => { envDirty = performance.now(); if (OPEN) OPEN.refreshLight(); })
+  const load = () => (loading = loading || Promise.all(files.map((f) => (f ? loadImage(f) : null))).then(upload)
+    .then(() => { envDirty = performance.now(); if (OPEN) OPEN.refreshLight(); })
     .catch((e) => console.warn('light maps failed to load', name, e)));
-  A.arr = { tex, files, grey: !!useK, load };
+  A.arr = { tex, files, load };
   if (!/^E/.test(name)) load();            // the empty-room light waits until it is needed
   return A.arr;
 }
@@ -271,9 +225,7 @@ function lightSet(A, tag, name) {
   const decl = `uniform sampler2DArray l${tag}A; uniform vec3 l${tag}DS; uniform vec3 u${tag}LampW[${NL * 3}];`;
   const at = (i) => `lmDecode(texture(l${tag}A, vec3(q, ${i}.0)).rgb)`;
   const body = `vec3 E${tag} = dk * (uDayW.x * l${tag}DS.x * ${at(0)} + uDayW.y * l${tag}DS.y * ${at(1)} + uDayW.z * l${tag}DS.z * ${at(2)});
-          ${arr.grey
-    ? arr.files.slice(3).map((f, s) => (f ? `E${tag} += ${at(3 + s)}.r * u${tag}LampW[${s}];` : '')).join('\n          ')
-    : Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
+          ${Array.from({ length: files.length }, (_, i) => `{ vec3 t = ${at(3 + i)}; E${tag} += t.r * u${tag}LampW[${3 * i}] + t.g * u${tag}LampW[${3 * i + 1}] + t.b * u${tag}LampW[${3 * i + 2}]; }`).join('\n          ')}`;
   const fn = `vec3 lm${tag}(vec2 q, float dk) { ${body}\n          return E${tag}; }`;   // dk: the room's daylight (curtains)
   return { u, decl, fn, sum: `vec3 E${tag} = lm${tag}(q, dk);`, NL };
 }
@@ -367,16 +319,15 @@ function lightmapped(mat, atlas) {
           return vec2(c * bp.x - s * bp.y, s * bp.x + c * bp.y) * uTri.y + uTri.zw; }
         // Blender's object-space texture mapping, which glTF cannot carry: flat (floors) or box (wood, fabric)
         vec4 triTex(sampler2D t, vec2 uv) {
-          if (uTri.x < 0.5) return texture2D(t, uv);
-          vec3 bp = vec3(vWP.x, -vWP.z, vWP.y);
-          if (uTri.x < 1.5) {
-            float c = cos(uTriRot), s = sin(uTriRot);
-            vec2 p = vec2(c * bp.x - s * bp.y, s * bp.x + c * bp.y) * uTri.y + uTri.zw;
-            return texture2D(t, vec2(p.x, 1.0 - p.y));
+          vec4 r;
+          if (uTri.x < 0.5) r = texture2D(t, uv);
+          else if (uTri.x < 1.5) { vec2 p = flatUV(); r = texture2D(t, vec2(p.x, 1.0 - p.y)); }
+          else {
+            vec3 bn = abs(normalize(vec3(vWN.x, -vWN.z, vWN.y))); bn = pow(bn, vec3(6.0)); bn /= dot(bn, vec3(1.0));
+            vec3 sp = vec3(vWP.x, -vWP.z, vWP.y) * uTri.y;
+            r = texture2D(t, vec2(sp.y, 1.0 - sp.z)) * bn.x + texture2D(t, vec2(sp.x, 1.0 - sp.z)) * bn.y + texture2D(t, vec2(sp.x, 1.0 - sp.y)) * bn.z;
           }
-          vec3 bn = abs(normalize(vec3(vWN.x, -vWN.z, vWN.y))); bn = pow(bn, vec3(6.0)); bn /= dot(bn, vec3(1.0));
-          vec3 sp = bp * uTri.y;
-          return texture2D(t, vec2(sp.y, 1.0 - sp.z)) * bn.x + texture2D(t, vec2(sp.x, 1.0 - sp.z)) * bn.y + texture2D(t, vec2(sp.x, 1.0 - sp.y)) * bn.z;
+          return r;
         }` : ''}
         vec3 lmDecode(vec3 t) { return pow(t, vec3(2.2)); }
         ${full.fn}
@@ -450,7 +401,7 @@ function lightmapped(mat, atlas) {
           vec3 bp = vec3(vWP.x, -vWP.z, vWP.y), d;
           if (uTri.x < 1.5) {
             float c = cos(uTriRot), s = sin(uTriRot);
-            vec2 p = vec2(c * bp.x - s * bp.y, s * bp.x + c * bp.y) * uTri.y + uTri.zw;
+            vec2 p = flatUV();
             vec2 t = (texture2D(normalMap, vec2(p.x, 1.0 - p.y)).xy * 2.0 - 1.0) * normalScale;
             d = vec3(c, -s, 0.0) * t.x + vec3(s, c, 0.0) * t.y;
           } else {
@@ -685,18 +636,16 @@ function loadPart(atlas, onProgress) {
 async function init() {
   MANIFEST = await (await fetch(vurl(BASE + 'lightmaps.json'))).json();
   if (!MANIFEST.day) MANIFEST.day = ['morning', 'midday', 'dusk'];
-  try { TEXMAP = await (await fetch(vurl(BASE + 'texmap.json'))).json(); } catch (e) { console.warn('texture mapping table not found'); }
+  try { TEXMAP = await (await fetch(vurl(BASE + 'texmap.json'))).json(); } catch { console.warn('texture mapping table not found'); }
   try {
     const L = await (await fetch(vurl('design/lighting.json'))).json();
     for (const s of L.scenes) SCENES[s.id] = { he: s.he, en: s.name, levels: s.levels, text: s.text };
     for (const [k, c] of Object.entries(L.circuits)) CCT[k] = c.cct;
   } catch (e) { console.warn('lighting plan not found', e); }
-  try { PIECE_DEFS = Object.fromEntries((await (await fetch(vurl(BASE + 'pieces.json'))).json()).map((d) => [d.id, d])); } catch (e) { console.warn('no furniture pieces'); }
+  try { PIECE_DEFS = Object.fromEntries((await (await fetch(vurl(BASE + 'pieces.json'))).json()).map((d) => [d.id, d])); } catch { console.warn('no furniture pieces'); }
   Object.values(PIECE_DEFS).filter((d) => d.rug && /rug|runner/i.test(d.name)).slice(0, 8).forEach((d, i) => U_MOV.rugs.value[i].set(d.cx, d.cy, d.w / 2, d.d / 2));
   FURN = createFurniture(furnitureCtx());
   OPEN = createOpenings({ scene, DATA, setDayK, onChange: () => saveHash(), floorLight: (x, y) => sampleLight(x, y, 'S'),
-    // a shut door reads the floor light from a small copy of the shell's WebP maps: fetched the first time (with KTX2 they are not loaded)
-    needLight: () => loadLum(MANIFEST.atlases.S).then(() => OPEN.refreshLight()),
     cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData }; c.onBeforeCompile = m.onBeforeCompile; return c; } });
   const order = (MANIFEST.order || Object.keys(MANIFEST.atlases)).filter((a) => MANIFEST.atlases[a]?.glb);
   const first = order.filter((a) => a !== 'R'), later = order.filter((a) => a === 'R');
@@ -784,7 +733,6 @@ function furnitureCtx() {
       ray.setFromCamera(ndc, camera); ray.far = Infinity;
       return ray.intersectObjects(meshes, false).find((h) => visibleDeep(h.object) && !h.object.material.transparent) || null;
     },
-    get hasEmpty() { return !!MANIFEST.atlases.ES; },
     setMoved,
     sampleLight,
     cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData, uPiece: { value: 1 } }; c.onBeforeCompile = m.onBeforeCompile; c.customProgramCacheKey = m.customProgramCacheKey; return c; },
@@ -1351,5 +1299,6 @@ function frame(now) {
 let framesOn = false;
 function startFrames() { if (!framesOn) { framesOn = true; requestAnimationFrame(frame); } }
 init().then(startFrames).catch((e) => { console.error(e); $('#veil .veil__en').textContent = 'Could not load the flat: ' + e.message; });
-window.__mood = { get FURN() { return FURN; }, get OPEN() { return OPEN; }, sampleLight, lumCache, floorMeshes,
-  floorProbe: (px, py) => { downRay.set(V(px, 1.2, -py), V(0, -1, 0)); downRay.far = 2; const h = downRay.intersectObjects(floorMeshes, false)[0]; return h ? { src: h.object.userData.src, uv1: h.uv1 && [h.uv1.x, h.uv1.y], fit: [px * U_MOV.floor.value.x + U_MOV.floor.value.y, py * U_MOV.floor.value.z + U_MOV.floor.value.w] } : null; }, state, applyLight, applySample, applyMood, setView, walkTo, enterEye, V, scene, camera, renderer, U, eye, parts, openBoard, get MANIFEST() { return MANIFEST; } };
+// for tests (tools/check.mjs) and the console
+window.__mood = { get FURN() { return FURN; }, get OPEN() { return OPEN; }, get MANIFEST() { return MANIFEST; },
+  state, applyLight, applySample, applyMood, setView, walkTo, enterEye, scene, camera, renderer, U, eye, parts, openBoard };

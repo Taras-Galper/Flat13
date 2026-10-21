@@ -41,21 +41,13 @@ function overlap(A, B) {   // separating axis test for two convex quads
 }
 const inRect = ([x0, x1, y0, y1], x, y, m) => x >= x0 + m && x <= x1 - m && y >= y0 + m && y <= y1 - m;
 
-function shadowTexture() {
-  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
-  g.fillStyle = '#000'; g.fillRect(0, 0, 128, 128);
-  g.filter = 'blur(14px)'; g.fillStyle = '#fff'; g.beginPath(); g.roundRect(26, 26, 76, 76, 14); g.fill();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; return t;
-}
-
 export function createFurniture(ctx) {
   const { scene, camera, canvas, renderer } = ctx;
   const defs = Object.fromEntries((ctx.pieces || []).map((d) => [d.id, d]));
   const P = {};                    // id → piece at runtime
   const obstacles = [];            // built-ins standing on the floor: [quad]
-  let editing = false, selected = null, drag = null, addCount = 0, anyGain = false;
+  let editing = false, selected = null, drag = null, addCount = 0;
   const undoStack = [];
-  const SHADOW = shadowTexture();
   const accent = new THREE.Color('#b4683d');
 
   // ---------------------------------------------------------------- building the pieces from the loaded meshes
@@ -84,16 +76,12 @@ export function createFurniture(ctx) {
   }
   function make(id, d, g, added, srcId = id) {
     const p = { id, def: d, srcId, group: g, x: d.cx, y: d.cy, rot: 0, room: d.room, room0: d.room, x0: d.cx, y0: d.cy, removed: false, added, ...nameOf(d.name) };
-    // a soft contact shadow, shown when the room switches to its "empty" bake
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(d.w + 0.32, d.d + 0.32), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: SHADOW, transparent: true, opacity: 0.62, depthWrite: false, toneMapped: false }));
-    sh.rotation.x = -Math.PI / 2; sh.position.y = 0.012; sh.renderOrder = 2; sh.raycast = () => {}; sh.visible = false;
-    if (!d.rug) g.add(sh);
     // the outline of the footprint while it is selected
     const hx = d.w / 2, hy = d.d / 2;
     const ol = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([V(-hx, 0, hy), V(hx, 0, hy), V(hx, 0, -hy), V(-hx, 0, -hy)]),
       new THREE.LineBasicMaterial({ color: accent, depthTest: false, transparent: true, toneMapped: false }));
     ol.position.y = 0.02; ol.renderOrder = 11; ol.raycast = () => {}; ol.visible = false; g.add(ol);
-    Object.assign(p, { shadow: sh, outline: ol });
+    p.outline = ol;
     return p;
   }
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -144,14 +132,12 @@ export function createFurniture(ctx) {
   }
   function refreshShadows() { ctx.setMoved(movedList()); refreshGains(); }
   function refreshGains() {
-    anyGain = false;
     for (const p of Object.values(P)) {
       let gain = 1;
       if (changed(p) && !p.removed) {
         const a = ctx.sampleLight(p.x, p.y), b = ctx.sampleLight(p.x0, p.y0);
         if (a > 0 && b > 0) gain = THREE.MathUtils.clamp(Math.pow(a / b, 0.8), 0.35, 2.2);
       }
-      if (gain !== 1) anyGain = true;
       p.group.traverse((m) => {
         if (!m.isMesh || !m.material?.userData?.uPiece) return;
         if (gain !== 1 && !m.userData.ownMat) { m.material = ctx.cloneMat(m.material); m.userData.ownMat = true; }   // its own copy, so the brightness is its own
@@ -313,8 +299,8 @@ export function createFurniture(ctx) {
     const s = P[srcId]; if (!s) return null;
     const id = 'a' + ++addCount;
     const g = s.group.clone(true); g.name = 'piece ' + id; g.visible = true; scene.add(g);
-    // the clone's own shadow and outline replace the copied ones
-    g.children.filter((c) => c.isLine || (c.isMesh && c.material && c.material.alphaMap === SHADOW)).forEach((c) => g.remove(c));
+    // the clone's own outline replaces the copied one
+    g.children.filter((c) => c.isLine).forEach((c) => g.remove(c));
     const p = make(id, s.def, g, true, srcId);
     Object.assign(p, { x0: s.x0, y0: s.y0, room0: s.room0 });
     g.traverse((m) => { if (m.isMesh) m.userData.piece = id; });
@@ -375,8 +361,8 @@ export function createFurniture(ctx) {
     const dir = new THREE.Vector3(toRoom.x, 0.6, toRoom.z).normalize();
     cam.position.copy(c).addScaledVector(dir, (r / Math.sin((28 * Math.PI) / 360)) * 1.05); cam.lookAt(c);
     const layer = 7; const prev = [], vis = p.group.visible;
-    p.group.visible = true; p.shadow.layers.set(0); p.outline.layers.set(0);
-    p.group.traverse((o) => { if (o === p.shadow || o === p.outline) return; prev.push([o, o.layers.mask]); o.layers.set(layer); });
+    p.group.visible = true; p.outline.layers.set(0);
+    p.group.traverse((o) => { if (o === p.outline) return; prev.push([o, o.layers.mask]); o.layers.set(layer); });
     cam.layers.set(layer);
     const size = renderer.getSize(new THREE.Vector2()), cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
     renderer.setScissorTest(true); renderer.setScissor(0, 0, W, H); renderer.setViewport(0, 0, W, H);

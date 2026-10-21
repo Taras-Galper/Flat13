@@ -141,24 +141,7 @@
       "BAL_TABLE"
      ]
     }
-   },
-   "ktx": [
-    "lm/S_morning.ktx2",
-    "lm/S_midday.ktx2",
-    "lm/S_dusk.ktx2",
-    "lm/S_entry.ktx2",
-    "lm/S_walls.ktx2",
-    "lm/S_media.ktx2",
-    "lm/S_paper.ktx2",
-    "lm/S_screen.ktx2",
-    "lm/S_kitchen.ktx2",
-    "lm/S_corridor.ktx2",
-    "lm/S_master.ktx2",
-    "lm/S_bed3.ktx2",
-    "lm/S_mamad.ktx2",
-    "lm/S_bed4.ktx2",
-    "lm/S_terrace.ktx2"
-   ]
+   }
   },
   "L": {
    "glb": "living.gltf",
@@ -301,24 +284,7 @@
       "BAL_TABLE"
      ]
     }
-   },
-   "ktx": [
-    "lm/L_morning.ktx2",
-    "lm/L_midday.ktx2",
-    "lm/L_dusk.ktx2",
-    "lm/L_entry.ktx2",
-    "lm/L_walls.ktx2",
-    "lm/L_media.ktx2",
-    "lm/L_paper.ktx2",
-    "lm/L_screen.ktx2",
-    "lm/L_kitchen.ktx2",
-    "lm/L_corridor.ktx2",
-    null,
-    "lm/L_bed3.ktx2",
-    null,
-    null,
-    "lm/L_terrace.ktx2"
-   ]
+   }
   },
   "R": {
    "glb": "rooms.gltf",
@@ -461,24 +427,7 @@
       "BAL_TABLE"
      ]
     }
-   },
-   "ktx": [
-    "lm/R_morning.ktx2",
-    "lm/R_midday.ktx2",
-    "lm/R_dusk.ktx2",
-    null,
-    null,
-    null,
-    null,
-    "lm/R_screen.ktx2",
-    null,
-    "lm/R_corridor.ktx2",
-    "lm/R_master.ktx2",
-    "lm/R_bed3.ktx2",
-    "lm/R_mamad.ktx2",
-    "lm/R_bed4.ktx2",
-    "lm/R_terrace.ktx2"
-   ]
+   }
   },
   "EL": {
    "glb": "",
@@ -622,24 +571,7 @@
      ]
     }
    },
-   "builtins": true,
-   "ktx": [
-    "lm/EL_morning.ktx2",
-    "lm/EL_midday.ktx2",
-    "lm/EL_dusk.ktx2",
-    "lm/EL_entry.ktx2",
-    "lm/EL_walls.ktx2",
-    "lm/EL_media.ktx2",
-    "lm/EL_paper.ktx2",
-    "lm/EL_screen.ktx2",
-    "lm/EL_kitchen.ktx2",
-    "lm/EL_corridor.ktx2",
-    null,
-    "lm/EL_bed3.ktx2",
-    null,
-    null,
-    "lm/EL_terrace.ktx2"
-   ]
+   "builtins": true
   },
   "ER": {
    "glb": "",
@@ -783,24 +715,7 @@
      ]
     }
    },
-   "builtins": true,
-   "ktx": [
-    "lm/ER_morning.ktx2",
-    "lm/ER_midday.ktx2",
-    "lm/ER_dusk.ktx2",
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    "lm/ER_corridor.ktx2",
-    "lm/ER_master.ktx2",
-    "lm/ER_bed3.ktx2",
-    "lm/ER_mamad.ktx2",
-    "lm/ER_bed4.ktx2",
-    "lm/ER_terrace.ktx2"
-   ]
+   "builtins": true
   },
   "ES": {
    "glb": "",
@@ -943,24 +858,7 @@
       "BAL_TABLE"
      ]
     }
-   },
-   "ktx": [
-    "lm/ES_morning.ktx2",
-    "lm/ES_midday.ktx2",
-    "lm/ES_dusk.ktx2",
-    "lm/ES_entry.ktx2",
-    "lm/ES_walls.ktx2",
-    "lm/ES_media.ktx2",
-    "lm/ES_paper.ktx2",
-    "lm/ES_screen.ktx2",
-    "lm/ES_kitchen.ktx2",
-    "lm/ES_corridor.ktx2",
-    "lm/ES_master.ktx2",
-    "lm/ES_bed3.ktx2",
-    "lm/ES_mamad.ktx2",
-    "lm/ES_bed4.ktx2",
-    "lm/ES_terrace.ktx2"
-   ]
+   }
   }
  },
  "order": [
@@ -1041,9 +939,5 @@
    "BAL_WALL",
    "BAL_TABLE"
   ]
- },
- "black": {
-  "1536": "lm/black_1536.ktx2",
-  "2048": "lm/black_2048.ktx2"
  }
 }

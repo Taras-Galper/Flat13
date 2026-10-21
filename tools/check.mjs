@@ -34,7 +34,7 @@ try {
 } catch (e) { warn('could not compare with origin/main: ' + e.message.split('\n')[0]); }
 
 // ---------------------------------------------------------------- 2. load the page
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.webp': 'image/webp', '.ktx2': 'image/ktx2', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.webp': 'image/webp', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
   const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]).replace(/\/$/, '/index.html'));
   if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
@@ -48,8 +48,7 @@ const errors = [];
 page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.location()?.url || '') && !/status of 404/.test(m.text())) errors.push(m.text().slice(0, 300)); });
 page.on('pageerror', (e) => errors.push('page error: ' + e.message));
 page.on('response', (r) => { if (r.status() >= 400 && !/favicon/.test(r.url())) errors.push(`${r.status()} ${r.url().replace(/^.*?:\d+\//, '')}`); });
-// software GL (SwiftShader) cannot take the compressed light-map arrays: the check runs the WebP maps, the same shaders
-await page.goto(`http://localhost:${port}/?noenv&webp#e=5.6%2C7.2%2C-0.6%2C0.0%2C-0.6&t=1.00&s=evening`);
+await page.goto(`http://localhost:${port}/?noenv#e=5.6%2C7.2%2C-0.6%2C0.0%2C-0.6&t=1.00&s=evening`);
 const t0 = Date.now();
 try {
   await page.waitForFunction(() => window.__mood && Object.keys(window.__mood.parts || {}).length >= 3 && window.__mood.renderer.info.render.frame > 5, null, { timeout: 420000 });

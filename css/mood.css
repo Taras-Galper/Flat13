@@ -3,9 +3,9 @@ body.mood-page { overflow: hidden; height: 100vh; }
 #mood { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
 .mood-page .mast { pointer-events: auto; }
 .mast__row { display: flex; gap: 14px; align-items: baseline; margin-top: 6px; }
-.mast__link, .mast__btn { display: inline-block; font: 500 10.5px/1.6 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); text-decoration: none; border: 0; border-bottom: 1px solid var(--hair); background: none; padding: 0; cursor: pointer; }
+.mast__btn { display: inline-block; font: 500 10.5px/1.6 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); text-decoration: none; border: 0; border-bottom: 1px solid var(--hair); background: none; padding: 0; cursor: pointer; }
 .mast__btn span { font: 500 12px/1 var(--he); letter-spacing: 0; text-transform: none; margin-right: 4px; }
-.mast__link:hover, .mast__btn:hover { border-color: var(--ink); }
+.mast__btn:hover { border-color: var(--ink); }
 .accent { color: #b4683d; }
 
 .panel { position: fixed; z-index: 3; width: 252px; overflow: auto; padding: 12px 12px 10px;

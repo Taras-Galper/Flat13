@@ -10,7 +10,7 @@ const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 export function createOpenings(ctx) {
   const { scene, DATA } = ctx;
   const doors = [], curtains = [], windows = [], anims = [];
-  const box = new THREE.Box3(), V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const box = new THREE.Box3();
 
   // ---------------------------------------------------------------- doors: a pivot at the hinge, like build_scene.py made them
   function addDoor(mesh) {
@@ -96,10 +96,8 @@ export function createOpenings(ctx) {
   }
 
   // ---------------------------------------------------------------- toggling, animated
-  let lightAsked = false;
   function toggleDoor(door, open = !door.open, now = false) {
     if (door.open === open) return;
-    if (!open && !lightAsked && ctx.needLight) { lightAsked = true; ctx.needLight(); }
     door.open = open; animate(door, 'door', open ? 0 : 1, now);
   }
   function toggleWindow(w, open = !w.open, now = false) {

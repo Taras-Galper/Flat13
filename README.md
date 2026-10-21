@@ -32,7 +32,7 @@ then open `http://localhost:8000/`. (Opening `index.html` straight from disk doe
 | `index.html`, `css/`, `js/mood.js` | the page |
 | `js/world.js`, `js/data.js`, `js/build.js`, `js/shading.js` | the city and bay outside; the plan data (from the DXF) |
 | `mood/*.gltf`, `*.bin`, `tex/` | the three parts of the model |
-| `mood/lm/`, `mood/lightmaps.json` | the baked light: WebP (lamp groups three to a map); KTX2, GPU-compressed, on trial with `?ktx` (`tools/lm_ktx2.mjs`) |
+| `mood/lm/`, `mood/lightmaps.json` | the baked light (WebP; lamp groups three to a map) |
 | `mood/pieces.json`, `js/furniture.js` | which objects form a movable piece (from `blender/piece_tag.py`), and the furniture editor |
 | `js/openings.js` | doors and curtains: hinges and rails from the plan data, the daylight behind drawn sheers |
 | `mood/texmap.json` | Blender's object-space texture mapping per material (floors, oak, rugs, fabrics), which glTF can't carry — the page reproduces it |

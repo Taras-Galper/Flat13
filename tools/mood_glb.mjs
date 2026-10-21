@@ -5,8 +5,8 @@
 // by the shell, the living room and the bedrooms only once.  Needs @gltf-transform/core, functions,
 // extensions, meshoptimizer and sharp.  SIMPLIFY_ERR=0.0006 by default.
 import { NodeIO, PropertyType } from '@gltf-transform/core';
-import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
-import { dedup, prune, weld, reorder, quantize, textureCompress, meshopt, simplify } from '@gltf-transform/functions';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { dedup, prune, weld, textureCompress, meshopt, simplify } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 const [src, dst] = process.argv.slice(2);
