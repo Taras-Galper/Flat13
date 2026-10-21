@@ -14,8 +14,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=20';
-import { createOpenings } from './openings.js?v=20';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=21';
+import { createOpenings } from './openings.js?v=21';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -176,7 +176,7 @@ const texLoader = new THREE.TextureLoader(manager);
 // 4–8× less memory than WebP, which the browser unpacks to full 32-bit colour. Then each lamp group is its own grey
 // layer (slot = lamp file × 3 + channel); with WebP (?webp) the lamp maps hold three groups each.
 // The "empty room" light (atlases E…) is only fetched once someone rearranges furniture.
-const USE_KTX = () => !!MANIFEST.black && !Q.has('webp');   // the WebP maps with ?webp
+const USE_KTX = () => !!MANIFEST.black && Q.has('ktx');   // on trial (?ktx): ETC1S shows coloured blocks in dim light
 const lmBitmaps = {}, lumCache = {};
 function lmBitmap(file) {
   return (lmBitmaps[file] = lmBitmaps[file] || fetch(vurl(BASE + file)).then((r) => r.blob())
