@@ -62,6 +62,9 @@ bk = sc.render.bake; bk.use_pass_direct = True; bk.use_pass_indirect = True; bk.
 bk.target = "IMAGE_TEXTURES"
 
 col = bpy.data.collections["MOOD2"]
+col.hide_viewport = False   # a collection switched off in the viewports can be neither selected nor baked nor exported
+for lc in bpy.context.view_layer.layer_collection.children:
+    if lc.name == col.name: lc.exclude = False; lc.hide_viewport = False
 KEEP = {"MOOD2", "Shell", "Openings", "Floors", "Ceilings", "Lights"}
 for o in bpy.data.objects:
     if o.type in ("MESH", "CURVE") and not ({c.name for c in o.users_collection} & KEEP): o.hide_render = True

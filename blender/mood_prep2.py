@@ -113,6 +113,12 @@ def step_copy():
     dg = bpy.context.evaluated_depsgraph_get()
     col = bpy.data.collections.get("MOOD2") or bpy.data.collections.new("MOOD2")
     if col.name not in bpy.context.scene.collection.children: bpy.context.scene.collection.children.link(col)
+    # the copies must be visible in the view layer: a collection switched off in the viewports is not evaluated, so
+    # no modifier applied (the decimation silently did nothing), edit mode could not unwrap them, and the saved file
+    # had them unselectable (the export came out empty and the bake stopped). Switched back after saving.
+    STATE["col_hidden"] = col.hide_viewport; col.hide_viewport = False; col.hide_render = False
+    for lc in bpy.context.view_layer.layer_collection.children:
+        if lc.name == col.name: lc.exclude = False; lc.hide_viewport = False
     for o in list(col.objects): bpy.data.objects.remove(o, do_unlink=True)
     matcopy = {}; made = {"S": [], "L": [], "R": []}; tb = ta = 0
     for o, atlas, room in pick():
@@ -158,6 +164,8 @@ def step_copy():
         made[atlas].append(no)
     STATE["made"] = made; STATE["queue"] = [o for a in made for o in made[a]]; STATE["n"] = len(STATE["queue"])
     log("MOOD2 objects", {k: len(v) for k, v in made.items()}, "tris", tb, "->", ta)
+    hid = [o.name for a in made for o in made[a] if not o.visible_get()]
+    if hid: raise RuntimeError(f"{len(hid)} MOOD2 copies are not visible in the view layer (e.g. {hid[0]}): they cannot be unwrapped or baked")
 
 def unwrap(ob):
     bpy.ops.object.select_all(action="DESELECT")
@@ -180,6 +188,7 @@ def finish():
     if old: old.hide_render = True
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(PROJECT, "blender", "dira_mood2.blend"), copy=True)
     for s, v in was: s.hide_render = v
+    if STATE.get("col_hidden"): bpy.data.collections["MOOD2"].hide_viewport = True   # the open scene stays light
     json.dump({a: [{"name": o.name, "room": o["room"]} for o in made[a]] for a in made}, open(os.path.join(PROJECT, "mood", "objects2.json"), "w"), indent=0)
     log("MOOD PREP2 OK", f"{time.time() - STATE['t0']:.0f}s")
 
