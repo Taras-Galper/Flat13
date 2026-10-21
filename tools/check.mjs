@@ -48,7 +48,8 @@ const errors = [];
 page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.location()?.url || '') && !/status of 404/.test(m.text())) errors.push(m.text().slice(0, 300)); });
 page.on('pageerror', (e) => errors.push('page error: ' + e.message));
 page.on('response', (r) => { if (r.status() >= 400 && !/favicon/.test(r.url())) errors.push(`${r.status()} ${r.url().replace(/^.*?:\d+\//, '')}`); });
-await page.goto(`http://localhost:${port}/?noenv#e=5.6%2C7.2%2C-0.6%2C0.0%2C-0.6&t=1.00&s=evening`);
+// software GL (SwiftShader) cannot take the compressed light-map arrays: the check runs the WebP maps, the same shaders
+await page.goto(`http://localhost:${port}/?noenv&webp#e=5.6%2C7.2%2C-0.6%2C0.0%2C-0.6&t=1.00&s=evening`);
 const t0 = Date.now();
 try {
   await page.waitForFunction(() => window.__mood && Object.keys(window.__mood.parts || {}).length >= 3 && window.__mood.renderer.info.render.frame > 5, null, { timeout: 420000 });

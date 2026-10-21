@@ -96,8 +96,10 @@ export function createOpenings(ctx) {
   }
 
   // ---------------------------------------------------------------- toggling, animated
+  let lightAsked = false;
   function toggleDoor(door, open = !door.open, now = false) {
     if (door.open === open) return;
+    if (!open && !lightAsked && ctx.needLight) { lightAsked = true; ctx.needLight(); }
     door.open = open; animate(door, 'door', open ? 0 : 1, now);
   }
   function toggleWindow(w, open = !w.open, now = false) {

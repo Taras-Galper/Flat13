@@ -14,8 +14,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld, setWorldMix } from './world.js';
 import { DATA } from './data.js';
-import { createFurniture } from './furniture.js?v=19';
-import { createOpenings } from './openings.js?v=19';   // keep the version in step with index.html
+import { createFurniture } from './furniture.js?v=20';
+import { createOpenings } from './openings.js?v=20';   // keep the version in step with index.html
 
 const Q = new URLSearchParams(location.search);
 const BASE = Q.get('base') || 'mood/';
@@ -174,9 +174,9 @@ const texLoader = new THREE.TextureLoader(manager);
 // separate maps on top of the material's own textures, so its shader failed and the floor was not drawn at all.
 // The maps come GPU-compressed (KTX2, made by tools/lm_ktx2.mjs) and stay compressed on the graphics card, about
 // 4–8× less memory than WebP, which the browser unpacks to full 32-bit colour. Then each lamp group is its own grey
-// layer (slot = lamp file × 3 + channel); with WebP (the default until KTX2 is proven on phones) the lamp maps hold three groups each.
+// layer (slot = lamp file × 3 + channel); with WebP (?webp) the lamp maps hold three groups each.
 // The "empty room" light (atlases E…) is only fetched once someone rearranges furniture.
-const USE_KTX = () => !!MANIFEST.black && Q.has('ktx');   // still on trial: on with ?ktx
+const USE_KTX = () => !!MANIFEST.black && !Q.has('webp');   // the WebP maps with ?webp
 const lmBitmaps = {}, lumCache = {};
 function lmBitmap(file) {
   return (lmBitmaps[file] = lmBitmaps[file] || fetch(vurl(BASE + file)).then((r) => r.blob())
@@ -695,6 +695,8 @@ async function init() {
   Object.values(PIECE_DEFS).filter((d) => d.rug && /rug|runner/i.test(d.name)).slice(0, 8).forEach((d, i) => U_MOV.rugs.value[i].set(d.cx, d.cy, d.w / 2, d.d / 2));
   FURN = createFurniture(furnitureCtx());
   OPEN = createOpenings({ scene, DATA, setDayK, onChange: () => saveHash(), floorLight: (x, y) => sampleLight(x, y, 'S'),
+    // a shut door reads the floor light from a small copy of the shell's WebP maps: fetched the first time (with KTX2 they are not loaded)
+    needLight: () => loadLum(MANIFEST.atlases.S).then(() => OPEN.refreshLight()),
     cloneMat: (m) => { const c = m.clone(); c.userData = { ...m.userData }; c.onBeforeCompile = m.onBeforeCompile; return c; } });
   const order = (MANIFEST.order || Object.keys(MANIFEST.atlases)).filter((a) => MANIFEST.atlases[a]?.glb);
   const first = order.filter((a) => a !== 'R'), later = order.filter((a) => a === 'R');
